@@ -33,6 +33,8 @@ interface ShopData {
   email: string
   address: string
   business_hours?: Record<string, { open: string; close: string } | null>
+  subscription_tier?: string
+  subscription_status?: string
 }
 
 export default function SettingsPage() {
@@ -479,15 +481,38 @@ export default function SettingsPage() {
           <div className="flex items-center justify-between rounded-xl border bg-gradient-to-r from-primary/5 to-amber-400/5 p-4">
             <div>
               <div className="flex items-center gap-2">
-                <p className="font-bold text-lg">Free Trial</p>
-                <Badge variant="success" className="text-xs">14 days left</Badge>
+                <p className="font-bold text-lg">
+                  {shop?.subscription_tier === "pro" ? "Pro Plan" :
+                   shop?.subscription_tier === "business" ? "Business Plan" :
+                   "Free Trial"}
+                </p>
+                <Badge
+                  variant={shop?.subscription_status === "active" ? "success" : "secondary"}
+                  className="text-xs"
+                >
+                  {shop?.subscription_status === "active" ? "Active" :
+                   shop?.subscription_status === "canceled" ? "Canceled" :
+                   "14 days left"}
+                </Badge>
               </div>
-              <p className="text-sm text-muted-foreground mt-1">Up to 50 pets · Basic features</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                {shop?.subscription_tier === "pro" ? "Up to 200 pets · AI scheduling · Email reminders" :
+                 shop?.subscription_tier === "business" ? "Unlimited pets · Advanced AI · Priority support" :
+                 "Up to 50 pets · Basic features"}
+              </p>
             </div>
-            <Button variant="gradient" onClick={() => handleUpgrade("pro")} disabled={upgradeLoading}>
-              {upgradeLoading ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Sparkles className="mr-1.5 h-4 w-4" />}
-              {upgradeLoading ? "Redirecting..." : "Upgrade to Pro"}
-            </Button>
+            {shop?.subscription_status === "active" ? (
+              <Button variant="outline" asChild>
+                <a href="https://dashboard.stripe.com/test/subscriptions" target="_blank" rel="noopener">
+                  Manage in Stripe
+                </a>
+              </Button>
+            ) : (
+              <Button variant="gradient" onClick={() => handleUpgrade("pro")} disabled={upgradeLoading}>
+                {upgradeLoading ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Sparkles className="mr-1.5 h-4 w-4" />}
+                {upgradeLoading ? "Redirecting..." : "Upgrade to Pro"}
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>

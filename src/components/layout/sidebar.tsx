@@ -1,10 +1,11 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import {
-  LayoutDashboard, CalendarDays, Users, PawPrint, BarChart3, Settings,
+  LayoutDashboard, CalendarDays, Users, PawPrint, BarChart3, Settings, Sparkles,
 } from "lucide-react"
 
 const navigation = [
@@ -18,6 +19,18 @@ const navigation = [
 
 export function Sidebar() {
   const pathname = usePathname()
+  const [tier, setTier] = useState<string>("free")
+
+  useEffect(() => {
+    fetch("/api/shop")
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.data?.subscription_tier) setTier(res.data.subscription_tier)
+      })
+      .catch(() => {})
+  }, [pathname])
+
+  const isPro = tier === "pro" || tier === "business"
 
   return (
     <aside className="fixed left-0 top-0 z-40 flex h-screen w-64 flex-col border-r bg-sidebar">
@@ -52,12 +65,25 @@ export function Sidebar() {
 
       {/* Bottom */}
       <div className="border-t p-4">
-        <div className="rounded-xl bg-gradient-to-br from-primary/8 to-amber-400/8 p-3">
+        <div className={cn(
+          "rounded-xl p-3",
+          isPro
+            ? "bg-gradient-to-br from-primary/15 to-amber-400/15"
+            : "bg-gradient-to-br from-primary/8 to-amber-400/8"
+        )}>
           <div className="flex items-center gap-2 mb-1">
-            <PawPrint className="h-4 w-4 text-primary" />
-            <span className="text-xs font-semibold">Free Plan</span>
+            {isPro ? (
+              <Sparkles className="h-4 w-4 text-primary" />
+            ) : (
+              <PawPrint className="h-4 w-4 text-primary" />
+            )}
+            <span className="text-xs font-semibold">
+              {tier === "pro" ? "Pro Plan" : tier === "business" ? "Business Plan" : "Free Plan"}
+            </span>
           </div>
-          <p className="text-xs text-muted-foreground">Upgrade to Pro to unlock AI features</p>
+          <p className="text-xs text-muted-foreground">
+            {isPro ? "All features unlocked" : "Upgrade to Pro to unlock AI features"}
+          </p>
         </div>
       </div>
     </aside>
