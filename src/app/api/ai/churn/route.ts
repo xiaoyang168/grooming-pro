@@ -36,15 +36,30 @@ export async function GET() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
+    const { data: shop } = await supabase
+      .from("shops")
+      .select("id")
+      .eq("owner_id", user.id)
+      .single()
+
+    if (!shop) return NextResponse.json({ error: "No shop found" }, { status: 404 })
+
     const { data: customers } = await supabase
       .from("customers")
       .select("id, name, last_visit, total_visits, total_spent")
+      .eq("shop_id", shop.id)
 
     if (!customers || customers.length === 0) {
       return NextResponse.json({ data: [] })
     }
 
-    const result = await analyzeChurnRisk({ customers })
+    // Convert cents to dollars for AI analysis
+    const normalized = customers.map((c: any) => ({
+      ...c,
+      total_spent: Math.round((c.total_spent || 0) / 100),
+    }))
+
+    const result = await analyzeChurnRisk({ customers: normalized })
     const alerts = JSON.parse(result)
     return NextResponse.json({ data: alerts })
   } catch (error) {

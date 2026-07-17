@@ -95,12 +95,12 @@ export async function naturalLanguageQuery(context: {
   }
 }): Promise<string> {
   const prompt = `You are an AI business analyst for a pet grooming salon.
-Answer the user's question based on this data:
+Answer the user's question based on this data (all amounts are in USD):
 ${JSON.stringify(context.shop_data)}
 
 Question: "${context.question}"
 
-Answer concisely. If the question requires a chart, suggest the chart type.
+Answer concisely with dollar amounts formatted as $X. If the question requires a chart, suggest the chart type.
 Only answer based on the provided data. Do not make up numbers.`
 
   return callDeepSeek([{ role: "user", content: prompt }], 0.7)

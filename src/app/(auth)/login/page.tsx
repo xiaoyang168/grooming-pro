@@ -67,7 +67,15 @@ export default function LoginPage() {
       }
 
       const { error } = await supabase.auth.signInWithPassword({ email, password })
-      if (error) throw error
+      if (error) {
+        if (error.message.includes("Invalid login")) {
+          throw new Error("Email or password is incorrect")
+        }
+        if (error.message.includes("Email not confirmed")) {
+          throw new Error("Please confirm your email first (check inbox)")
+        }
+        throw error
+      }
       if (rememberMe) {
         localStorage.setItem(REMEMBERED_EMAIL_KEY, email)
       } else {
@@ -76,7 +84,11 @@ export default function LoginPage() {
       router.push("/")
       router.refresh()
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Something went wrong")
+      if (err instanceof TypeError && err.message.includes("fetch")) {
+        setError("Network error — cannot reach Supabase. Check your internet connection or try demo mode.")
+      } else {
+        setError(err instanceof Error ? err.message : "Something went wrong")
+      }
     } finally {
       setLoading(false)
     }
