@@ -29,8 +29,8 @@ export async function POST(request: NextRequest) {
           quantity: 1,
         },
       ],
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:8888"}/settings?success=true`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:8888"}/settings?canceled=true`,
+      success_url: `${request.nextUrl.origin}/settings?success=true`,
+      cancel_url: `${request.nextUrl.origin}/settings?canceled=true`,
       client_reference_id: user.id,
       metadata: { plan, user_id: user.id },
     })
