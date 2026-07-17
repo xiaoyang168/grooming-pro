@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect, use, useRef } from "react"
-import { PawPrint, Clock, Scissors, Sparkles, Loader2, CheckCircle, AlertCircle, ArrowDown } from "lucide-react"
+import { PawPrint, Clock, Scissors, Sparkles, Loader2, CheckCircle, AlertCircle, Share2, Copy, X } from "lucide-react"
+import QRCode from "qrcode"
 
 interface ShopData {
   shop: { id: string; name: string; phone: string; email: string; address: string }
@@ -41,6 +42,9 @@ export default function BookingPage({ params }: { params: Promise<{ shopId: stri
   const [selectedTime, setSelectedTime] = useState<string | null>(null)
   const [notes, setNotes] = useState("")
   const [fieldErrors, setFieldErrors] = useState<Record<string, boolean>>({})
+  const [showShare, setShowShare] = useState(false)
+  const [qrDataUrl, setQrDataUrl] = useState("")
+  const [copied, setCopied] = useState(false)
   const customerRef = useRef<HTMLInputElement>(null)
   const petRef = useRef<HTMLInputElement>(null)
   const timeRef = useRef<HTMLDivElement>(null)
@@ -117,6 +121,23 @@ export default function BookingPage({ params }: { params: Promise<{ shopId: stri
     } finally {
       setSubmitting(false)
     }
+  }
+
+  async function openShare() {
+    const url = window.location.href
+    try {
+      const dataUrl = await QRCode.toDataURL(url, { width: 240, margin: 1, color: { dark: "#6366f1", light: "#ffffff" } })
+      setQrDataUrl(dataUrl)
+    } catch {
+      setQrDataUrl("")
+    }
+    setShowShare(true)
+  }
+
+  async function copyLink() {
+    await navigator.clipboard.writeText(window.location.href)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
   }
 
   const timeSlots = generateTimeSlots(null)
@@ -354,6 +375,53 @@ export default function BookingPage({ params }: { params: Promise<{ shopId: stri
             You will only be charged upon confirmation · Cancel anytime
           </p>
         </form>
+        )}
+
+        {/* Share Link Button */}
+        <div className="pb-8">
+          <button
+            onClick={openShare}
+            className="w-full rounded-2xl border-2 border-dashed border-primary/30 py-4 text-sm font-semibold text-primary hover:bg-primary/5 transition-colors flex items-center justify-center gap-2"
+          >
+            <Share2 className="h-4 w-4" />
+            Share Booking Link
+          </button>
+        </div>
+
+        {/* Share Modal */}
+        {showShare && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setShowShare(false)}>
+            <div className="bg-white rounded-2xl p-6 mx-4 max-w-sm w-full shadow-2xl animate-slide-up" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-lg">Share Booking Link</h3>
+                <button onClick={() => setShowShare(false)} className="p-1 hover:bg-muted rounded-lg"><X className="h-5 w-5" /></button>
+              </div>
+              <div className="flex flex-col items-center gap-4">
+                {qrDataUrl ? (
+                  <img src={qrDataUrl} alt="QR Code" className="w-60 h-60 rounded-xl border" />
+                ) : (
+                  <div className="w-60 h-60 rounded-xl border bg-muted flex items-center justify-center">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground text-center">Scan with your phone to book</p>
+                <div className="flex gap-2 w-full">
+                  <input
+                    className="flex-1 rounded-xl border bg-muted/50 px-3 py-2 text-xs text-muted-foreground truncate"
+                    value={window.location.href}
+                    readOnly
+                  />
+                  <button
+                    onClick={copyLink}
+                    className="rounded-xl bg-primary px-4 py-2 text-white text-sm font-semibold hover:bg-primary/90 transition-colors flex items-center gap-1 shrink-0"
+                  >
+                    {copied ? <CheckCircle className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    {copied ? "Copied" : "Copy"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
       </main>
     </div>
