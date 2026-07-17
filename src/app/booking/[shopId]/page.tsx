@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect, use } from "react"
-import { PawPrint, Clock, Scissors, Sparkles, Loader2, CheckCircle, AlertCircle } from "lucide-react"
+import { useState, useEffect, use, useRef } from "react"
+import { PawPrint, Clock, Scissors, Sparkles, Loader2, CheckCircle, AlertCircle, ArrowDown } from "lucide-react"
 
 interface ShopData {
   shop: { id: string; name: string; phone: string; email: string; address: string }
@@ -40,6 +40,10 @@ export default function BookingPage({ params }: { params: Promise<{ shopId: stri
   const [selectedDate, setSelectedDate] = useState("")
   const [selectedTime, setSelectedTime] = useState<string | null>(null)
   const [notes, setNotes] = useState("")
+  const [fieldErrors, setFieldErrors] = useState<Record<string, boolean>>({})
+  const customerRef = useRef<HTMLInputElement>(null)
+  const petRef = useRef<HTMLInputElement>(null)
+  const timeRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     fetch(`/api/shop/by-slug/${shopId}`)
@@ -56,9 +60,34 @@ export default function BookingPage({ params }: { params: Promise<{ shopId: stri
     setSelectedDate(today.toISOString().slice(0, 10))
   }, [])
 
+  function validateAndScroll() {
+    const errors: Record<string, boolean> = {}
+    if (!customerName.trim()) {
+      errors.customerName = true
+      customerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+      customerRef.current?.focus()
+      return errors
+    }
+    if (!petName.trim()) {
+      errors.petName = true
+      petRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+      petRef.current?.focus()
+      return errors
+    }
+    if (!selectedTime) {
+      errors.selectedTime = true
+      timeRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+      return errors
+    }
+    return errors
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!customerName || !petName || !data || !selectedService || !selectedTime) return
+    const errors = validateAndScroll()
+    setFieldErrors(errors)
+    if (Object.keys(errors).length > 0) return
+
     setSubmitting(true)
     setResult(null)
 
@@ -152,12 +181,15 @@ export default function BookingPage({ params }: { params: Promise<{ shopId: stri
             </h2>
             <div className="space-y-3">
               <input
-                className="w-full rounded-xl border px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                ref={customerRef}
+                className={`w-full rounded-xl border px-4 py-3 text-sm focus:outline-none focus:ring-2 ${
+                  fieldErrors.customerName ? "border-red-400 ring-red-200 bg-red-50" : "focus:ring-primary/30"
+                }`}
                 placeholder="Your name *"
                 value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
-                required
+                onChange={(e) => { setCustomerName(e.target.value); setFieldErrors({}) }}
               />
+              {fieldErrors.customerName && <p className="text-xs text-red-500 mt-1">Please enter your name</p>}
               <div className="grid grid-cols-2 gap-3">
                 <input
                   type="email"
@@ -184,12 +216,15 @@ export default function BookingPage({ params }: { params: Promise<{ shopId: stri
             </h2>
             <div className="space-y-3">
               <input
-                className="w-full rounded-xl border px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                ref={petRef}
+                className={`w-full rounded-xl border px-4 py-3 text-sm focus:outline-none focus:ring-2 ${
+                  fieldErrors.petName ? "border-red-400 ring-red-200 bg-red-50" : "focus:ring-primary/30"
+                }`}
                 placeholder="Pet name *"
                 value={petName}
-                onChange={(e) => setPetName(e.target.value)}
-                required
+                onChange={(e) => { setPetName(e.target.value); setFieldErrors({}) }}
               />
+              {fieldErrors.petName && <p className="text-xs text-red-500 mt-1">Please enter your pet's name</p>}
               <div className="grid grid-cols-2 gap-3">
                 <select
                   className="rounded-xl border px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
@@ -247,7 +282,7 @@ export default function BookingPage({ params }: { params: Promise<{ shopId: stri
           </section>
 
           {/* Step 4: Select Date & Time */}
-          <section className="rounded-2xl bg-white/90 backdrop-blur p-5 shadow-sm border">
+          <section ref={timeRef} className={`rounded-2xl bg-white/90 backdrop-blur p-5 shadow-sm border ${fieldErrors.selectedTime ? "ring-2 ring-red-300" : ""}`}>
             <h2 className="font-bold text-lg mb-4 flex items-center gap-2">
               <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-100 text-sm font-extrabold text-emerald-600">4</span>
               Select Date & Time
@@ -277,6 +312,11 @@ export default function BookingPage({ params }: { params: Promise<{ shopId: stri
               <Sparkles className="h-3 w-3 text-primary" />
               Available slots refresh in real-time
             </p>
+            {fieldErrors.selectedTime && (
+              <p className="mt-2 text-xs text-red-500 flex items-center gap-1">
+                <AlertCircle className="h-3 w-3" /> Please pick a time slot above
+              </p>
+            )}
           </section>
 
           {/* Step 5: Notes */}
@@ -297,7 +337,7 @@ export default function BookingPage({ params }: { params: Promise<{ shopId: stri
           {/* Submit */}
           <button
             type="submit"
-            disabled={submitting || !customerName || !petName || !svc || !selectedTime}
+            disabled={submitting}
             className="w-full rounded-2xl bg-gradient-to-r from-primary to-amber-500 py-4 text-lg font-extrabold text-white shadow-xl shadow-primary/25 hover:shadow-2xl hover:shadow-primary/30 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {submitting ? (
