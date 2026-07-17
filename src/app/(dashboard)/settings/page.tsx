@@ -21,7 +21,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Store, Clock, Scissors, CreditCard, Plus, Pencil, Sparkles, Loader2, CheckCircle } from "lucide-react"
+import { Store, Clock, Scissors, CreditCard, Plus, Pencil, Sparkles, Loader2, Share2, Copy, X, CheckCircle } from "lucide-react"
+import QRCode from "qrcode"
 import type { Service } from "@/types"
 
 const DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
@@ -29,6 +30,7 @@ const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
 interface ShopData {
   name: string
+  slug: string
   phone: string
   email: string
   address: string
@@ -49,6 +51,9 @@ export default function SettingsPage() {
 
   const [serviceDialogOpen, setServiceDialogOpen] = useState(false)
   const [upgradeLoading, setUpgradeLoading] = useState(false)
+  const [showShare, setShowShare] = useState(false)
+  const [qrDataUrl, setQrDataUrl] = useState("")
+  const [copied, setCopied] = useState(false)
   const [serviceSubmitting, setServiceSubmitting] = useState(false)
   const [serviceForm, setServiceForm] = useState({
     name: "",
@@ -75,6 +80,26 @@ export default function SettingsPage() {
       setUpgradeLoading(false)
     }
   }
+
+  async function openShare() {
+    const url = shop?.slug ? `https://grooming-pro-beta.vercel.app/booking/${shop.slug}` : ""
+    if (!url) return
+    try {
+      const dataUrl = await QRCode.toDataURL(url, { width: 240, margin: 1, color: { dark: "#6366f1", light: "#ffffff" } })
+      setQrDataUrl(dataUrl)
+    } catch { setQrDataUrl("") }
+    setShowShare(true)
+  }
+
+  async function copyBookingLink() {
+    const url = shop?.slug ? `https://grooming-pro-beta.vercel.app/booking/${shop.slug}` : ""
+    if (!url) return
+    await navigator.clipboard.writeText(url)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  const bookingLink = shop?.slug ? `https://grooming-pro-beta.vercel.app/booking/${shop.slug}` : ""
 
   async function fetchData() {
     try {
@@ -516,6 +541,57 @@ export default function SettingsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Share Booking Link */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2 mb-1">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-100">
+              <Share2 className="h-4 w-4 text-violet-600" />
+            </div>
+            <CardTitle>Booking Link</CardTitle>
+          </div>
+          <CardDescription>Share this link so customers can book online</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex gap-2">
+            <input
+              className="flex-1 rounded-xl border bg-muted/50 px-3 py-2 text-sm text-muted-foreground"
+              value={bookingLink}
+              readOnly
+            />
+            <Button variant="outline" size="sm" onClick={copyBookingLink}>
+              {copied ? <CheckCircle className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+              <span className="ml-1.5">{copied ? "Copied" : "Copy"}</span>
+            </Button>
+          </div>
+          <Button variant="outline" className="w-full" onClick={openShare}>
+            <Share2 className="h-4 w-4 mr-2" /> Show QR Code
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* QR Modal */}
+      {showShare && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setShowShare(false)}>
+          <div className="bg-white rounded-2xl p-6 mx-4 max-w-sm w-full shadow-2xl animate-slide-up" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-lg">Booking QR Code</h3>
+              <button onClick={() => setShowShare(false)} className="p-1 hover:bg-muted rounded-lg"><X className="h-5 w-5" /></button>
+            </div>
+            <div className="flex flex-col items-center gap-4">
+              {qrDataUrl ? (
+                <img src={qrDataUrl} alt="QR Code" className="w-60 h-60 rounded-xl border" />
+              ) : (
+                <div className="w-60 h-60 rounded-xl border bg-muted flex items-center justify-center">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground text-center">Print or share this QR code for customers to scan</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
