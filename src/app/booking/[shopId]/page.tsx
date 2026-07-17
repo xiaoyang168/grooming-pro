@@ -87,6 +87,7 @@ export default function BookingPage({ params }: { params: Promise<{ shopId: stri
     const errors = validateAndScroll()
     setFieldErrors(errors)
     if (Object.keys(errors).length > 0) return
+    if (!data) return
 
     setSubmitting(true)
     setResult(null)
