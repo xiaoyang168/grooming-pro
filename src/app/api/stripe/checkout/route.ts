@@ -29,6 +29,9 @@ export async function POST(request: NextRequest) {
           quantity: 1,
         },
       ],
+      subscription_data: {
+        metadata: { user_id: user.id, plan },
+      },
       success_url: `${request.nextUrl.origin}/settings?success=true`,
       cancel_url: `${request.nextUrl.origin}/settings?canceled=true`,
       client_reference_id: user.id,
