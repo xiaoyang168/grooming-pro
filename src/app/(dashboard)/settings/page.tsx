@@ -46,6 +46,7 @@ export default function SettingsPage() {
   const [saveMsg, setSaveMsg] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
   const [serviceDialogOpen, setServiceDialogOpen] = useState(false)
+  const [upgradeLoading, setUpgradeLoading] = useState(false)
   const [serviceSubmitting, setServiceSubmitting] = useState(false)
   const [serviceForm, setServiceForm] = useState({
     name: "",
@@ -54,6 +55,24 @@ export default function SettingsPage() {
     price: "",
     description: "",
   })
+
+  async function handleUpgrade(plan: "pro" | "business") {
+    setUpgradeLoading(true)
+    try {
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || "Stripe error")
+      if (json.url) window.location.href = json.url
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Stripe checkout failed — keys may not be configured")
+    } finally {
+      setUpgradeLoading(false)
+    }
+  }
 
   async function fetchData() {
     try {
@@ -465,9 +484,9 @@ export default function SettingsPage() {
               </div>
               <p className="text-sm text-muted-foreground mt-1">Up to 50 pets · Basic features</p>
             </div>
-            <Button variant="gradient" onClick={() => alert("Stripe checkout coming soon — placeholder for now.")}>
-              <Sparkles className="mr-1.5 h-4 w-4" />
-              Upgrade to Pro
+            <Button variant="gradient" onClick={() => handleUpgrade("pro")} disabled={upgradeLoading}>
+              {upgradeLoading ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Sparkles className="mr-1.5 h-4 w-4" />}
+              {upgradeLoading ? "Redirecting..." : "Upgrade to Pro"}
             </Button>
           </div>
         </CardContent>

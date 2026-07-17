@@ -1,21 +1,15 @@
 import Stripe from "stripe"
 
-let stripeClient: Stripe | null = null
-
 export function getStripe(): Stripe {
-  if (!stripeClient) {
-    stripeClient = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_stub", {
-      apiVersion: "2026-06-24.dahlia",
-    })
-  }
-  return stripeClient
+  return new Stripe(process.env.STRIPE_SECRET_KEY!, {
+    apiVersion: "2025-02-24.acacia" as any,
+  })
 }
 
 export const PRICING_PLANS = {
   pro: {
-    priceId: process.env.STRIPE_PRO_PRICE_ID!,
     name: "Pro",
-    amount: 2900, // $29/month in cents
+    amount: 2900, // $29/month
     features: [
       "Up to 200 pets",
       "AI scheduling",
@@ -25,9 +19,8 @@ export const PRICING_PLANS = {
     ],
   },
   business: {
-    priceId: process.env.STRIPE_BUSINESS_PRICE_ID!,
     name: "Business",
-    amount: 5900, // $59/month in cents
+    amount: 5900, // $59/month
     features: [
       "Unlimited pets",
       "Everything in Pro",
