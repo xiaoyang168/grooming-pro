@@ -28,12 +28,12 @@ export const metadata: Metadata = {
     "AI scheduling",
     "grooming business tools",
   ],
-  metadataBase: new URL("https://grooming-pro-beta.vercel.app"),
+  metadataBase: new URL("https://petalones.com"),
   openGraph: {
     title: "GroomingPro — Smart Pet Grooming Management",
     description:
       "AI-powered pet grooming salon SaaS. Bookings, CRM, marketing — all in one place.",
-    url: "https://grooming-pro-beta.vercel.app",
+    url: "https://petalones.com",
     siteName: "GroomingPro",
     type: "website",
   },
