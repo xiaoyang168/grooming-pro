@@ -1,18 +1,34 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { TrendingUp, DollarSign, Users, CalendarDays, Sparkles, Send, Loader2, Bot } from "lucide-react"
+import { TrendingUp, TrendingDown, DollarSign, Users, CalendarDays, Sparkles, Send, Loader2, Bot } from "lucide-react"
 import { useAiQuery } from "@/lib/ai-client"
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 
 interface DashboardStats {
   monthlyRevenue: number
   totalAppointments: number
   newCustomers: number
   retentionRate: number
-  lastMonthRetention: number
+  revenueChange: number
+  appointmentChange: number
+  newCustomerChange: number
+  retentionChange: number
+}
+
+interface TopService {
+  name: string
+  count: number
+  pct: number
+  color: string
+}
+
+interface RevenueTrendItem {
+  month: string
+  revenue: number
 }
 
 export default function ReportsPage() {
@@ -20,53 +36,64 @@ export default function ReportsPage() {
   const { answer, loading, error, query, setAnswer } = useAiQuery()
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [statsLoading, setStatsLoading] = useState(true)
+  const [topServices, setTopServices] = useState<TopService[]>([])
+  const [topServicesLoading, setTopServicesLoading] = useState(true)
+  const [revenueTrend, setRevenueTrend] = useState<RevenueTrendItem[]>([])
+  const [trendLoading, setTrendLoading] = useState(true)
 
   useEffect(() => {
+    // Fetch stats
     fetch("/api/dashboard/stats")
       .then((r) => r.json())
-      .then((res) => {
-        if (res.data) setStats(res.data)
-      })
+      .then((res) => { if (res.data) setStats(res.data) })
       .catch(console.error)
       .finally(() => setStatsLoading(false))
-  }, [])
 
-  const topServices = useMemo(
-    () => [
-      { name: "Full Groom", count: 86, pct: 46, color: "bg-primary" },
-      { name: "Bath & Brush", count: 52, pct: 28, color: "bg-amber-400" },
-      { name: "Spa Package", count: 31, pct: 17, color: "bg-blue-400" },
-      { name: "Nail Trim", count: 17, pct: 9, color: "bg-emerald-400" },
-    ],
-    []
-  )
+    // Fetch top services
+    fetch("/api/reports/top-services")
+      .then((r) => r.json())
+      .then((res) => { if (res.data) setTopServices(res.data) })
+      .catch(console.error)
+      .finally(() => setTopServicesLoading(false))
+
+    // Fetch revenue trend
+    fetch("/api/reports/revenue-trend")
+      .then((r) => r.json())
+      .then((res) => { if (res.data) setRevenueTrend(res.data) })
+      .catch(console.error)
+      .finally(() => setTrendLoading(false))
+  }, [])
 
   const kpis = [
     {
       label: "Monthly Revenue",
-      value: statsLoading || !stats ? "$4,280" : `$${(stats.monthlyRevenue / 100).toLocaleString()}`,
-      change: "+18%",
+      value: statsLoading || !stats ? "$0" : `$${(stats.monthlyRevenue / 100).toLocaleString()}`,
+      change: stats ? `${stats.revenueChange >= 0 ? "+" : ""}${stats.revenueChange}%` : "—",
+      isPositive: stats ? stats.revenueChange >= 0 : true,
       icon: DollarSign,
       color: "emerald",
     },
     {
       label: "Total Appointments",
-      value: statsLoading || !stats ? "186" : String(stats.totalAppointments),
-      change: "+12%",
+      value: statsLoading || !stats ? "0" : String(stats.totalAppointments),
+      change: stats ? `${stats.appointmentChange >= 0 ? "+" : ""}${stats.appointmentChange}%` : "—",
+      isPositive: stats ? stats.appointmentChange >= 0 : true,
       icon: CalendarDays,
       color: "blue",
     },
     {
       label: "New Customers",
-      value: statsLoading || !stats ? "24" : String(stats.newCustomers),
-      change: "+8%",
+      value: statsLoading || !stats ? "0" : String(stats.newCustomers),
+      change: stats ? `${stats.newCustomerChange >= 0 ? "+" : ""}${stats.newCustomerChange}%` : "—",
+      isPositive: stats ? stats.newCustomerChange >= 0 : true,
       icon: Users,
       color: "violet",
     },
     {
       label: "Retention Rate",
-      value: statsLoading || !stats ? "72%" : `${stats.retentionRate}%`,
-      change: "+5%",
+      value: statsLoading || !stats ? "0%" : `${stats.retentionRate}%`,
+      change: stats ? `${stats.retentionChange >= 0 ? "+" : ""}${stats.retentionChange}%` : "—",
+      isPositive: stats ? stats.retentionChange >= 0 : true,
       icon: TrendingUp,
       color: "amber",
     },
@@ -99,8 +126,14 @@ export default function ReportsPage() {
             <CardContent>
               <div className="text-2xl font-extrabold">{kpi.value}</div>
               <div className="mt-1 flex items-center gap-1">
-                <TrendingUp className="h-3 w-3 text-emerald-500" />
-                <span className="text-xs font-semibold text-emerald-600">{kpi.change}</span>
+                {kpi.isPositive ? (
+                  <TrendingUp className="h-3 w-3 text-emerald-500" />
+                ) : (
+                  <TrendingDown className="h-3 w-3 text-red-500" />
+                )}
+                <span className={`text-xs font-semibold ${kpi.isPositive ? "text-emerald-600" : "text-red-600"}`}>
+                  {kpi.change}
+                </span>
                 <span className="text-xs text-muted-foreground ml-1">vs last month</span>
               </div>
             </CardContent>
@@ -110,40 +143,83 @@ export default function ReportsPage() {
 
       {/* Charts */}
       <div className="grid gap-6 lg:grid-cols-2">
+        {/* Revenue Trend Chart */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Revenue Trend</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex h-64 flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-muted/20">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mb-2">
-                <TrendingUp className="h-5 w-5 text-primary" />
+            {trendLoading ? (
+              <div className="flex h-64 items-center justify-center">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
               </div>
-              <p className="text-sm font-medium text-muted-foreground">Recharts revenue chart</p>
-              <p className="text-xs text-muted-foreground mt-1">Renders automatically once data is connected</p>
-            </div>
+            ) : revenueTrend.length === 0 ? (
+              <div className="flex h-64 flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-muted/20">
+                <TrendingUp className="h-5 w-5 text-muted-foreground" />
+                <p className="mt-2 text-sm text-muted-foreground">No revenue data yet</p>
+              </div>
+            ) : (
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={revenueTrend} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="#9ca3af" />
+                    <YAxis
+                      tick={{ fontSize: 12 }}
+                      stroke="#9ca3af"
+                      tickFormatter={(v: number) => `$${v}`}
+                    />
+                    <Tooltip
+                      formatter={(value) => [`$${(value as number) ?? 0}`, "Revenue"]}
+                      contentStyle={{ borderRadius: "8px", border: "1px solid #e5e7eb" }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="revenue"
+                      stroke="#8b5cf6"
+                      strokeWidth={2}
+                      dot={{ r: 4, fill: "#8b5cf6" }}
+                      activeDot={{ r: 6 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </CardContent>
         </Card>
+
+        {/* Top Services */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Top Services</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {topServices.map((item) => (
-                <div key={item.name} className="flex items-center gap-3">
-                  <span className="w-28 text-sm font-medium">{item.name}</span>
-                  <div className="flex-1 h-6 rounded-full bg-muted overflow-hidden">
-                    <div
-                      className={`h-full rounded-full ${item.color} transition-all`}
-                      style={{ width: `${item.pct}%` }}
-                    />
+            {topServicesLoading ? (
+              <div className="flex h-64 items-center justify-center">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              </div>
+            ) : topServices.length === 0 ? (
+              <div className="flex h-64 flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-muted/20">
+                <CalendarDays className="h-5 w-5 text-muted-foreground" />
+                <p className="mt-2 text-sm text-muted-foreground">No service data yet</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {topServices.map((item) => (
+                  <div key={item.name} className="flex items-center gap-3">
+                    <span className="w-28 text-sm font-medium truncate">{item.name}</span>
+                    <div className="flex-1 h-6 rounded-full bg-muted overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${item.color} transition-all`}
+                        style={{ width: `${Math.max(item.pct, 3)}%` }}
+                      />
+                    </div>
+                    <span className="w-8 text-sm font-semibold text-right">{item.count}</span>
+                    <Badge variant="secondary" className="w-12 justify-center text-xs">{item.pct}%</Badge>
                   </div>
-                  <span className="w-8 text-sm font-semibold text-right">{item.count}</span>
-                  <Badge variant="secondary" className="w-12 justify-center text-xs">{item.pct}%</Badge>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

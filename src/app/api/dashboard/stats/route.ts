@@ -30,6 +30,7 @@ export async function GET() {
       { count: totalCustomers },
       { count: totalPets },
       { count: newCustomers },
+      { count: lastMonthNewCustomers },
       { data: lastMonthAppts },
       { data: weekAppts },
     ] = await Promise.all([
@@ -38,7 +39,7 @@ export async function GET() {
         .eq("shop_id", shopId)
         .gte("start_time", `${today}T00:00:00`)
         .lte("start_time", `${today}T23:59:59`),
-      // Monthly revenue & appointments (all confirmed+ in current month)
+      // Monthly revenue & appointments
       supabase.from("appointments").select("price, status")
         .eq("shop_id", shopId)
         .gte("start_time", monthStart),
@@ -52,8 +53,13 @@ export async function GET() {
       supabase.from("customers").select("*", { count: "exact", head: true })
         .eq("shop_id", shopId)
         .gte("created_at", monthStart),
-      // Last month appointments for retention/comparison
-      supabase.from("appointments").select("status")
+      // New customers last month (for comparison)
+      supabase.from("customers").select("*", { count: "exact", head: true })
+        .eq("shop_id", shopId)
+        .gte("created_at", lastMonthStart)
+        .lt("created_at", lastMonthEnd),
+      // Last month appointments (with price for revenue calc)
+      supabase.from("appointments").select("price, status")
         .eq("shop_id", shopId)
         .gte("start_time", lastMonthStart)
         .lt("start_time", lastMonthEnd),
@@ -63,19 +69,38 @@ export async function GET() {
         .gte("start_time", weekStart),
     ])
 
+    // Current month
     const monthlyRevenue = (monthAppts || []).reduce((sum: number, a: any) => sum + (a.price || 0), 0)
     const totalAppointments = monthAppts?.length || 0
-
     const completed = (monthAppts || []).filter((a: any) => a.status === "completed").length
     const retentionRate = totalAppointments > 0 ? Math.round((completed / totalAppointments) * 100) : 0
 
+    // Last month
+    const lastMonthRevenue = (lastMonthAppts || []).reduce((sum: number, a: any) => sum + (a.price || 0), 0)
+    const lastMonthTotalAppts = lastMonthAppts?.length || 0
     const lastMonthCompleted = (lastMonthAppts || []).filter((a: any) => a.status === "completed").length
-    const lastMonthTotal = lastMonthAppts?.length || 0
-    const lastMonthRetention = lastMonthTotal > 0 ? Math.round((lastMonthCompleted / lastMonthTotal) * 100) : 0
+    const lastMonthRetention = lastMonthTotalAppts > 0 ? Math.round((lastMonthCompleted / lastMonthTotalAppts) * 100) : 0
+
     const weekTotalAppts = weekAppts?.length || 0
 
-    // Revenue change vs last month
-    const lastMonthRevenue = 0 // Would need last month sum; keeping simple
+    // KPI changes (percentage)
+    const revenueChange = lastMonthRevenue > 0
+      ? Math.round(((monthlyRevenue - lastMonthRevenue) / lastMonthRevenue) * 100)
+      : monthlyRevenue > 0 ? 100 : 0
+
+    const appointmentChange = lastMonthTotalAppts > 0
+      ? Math.round(((totalAppointments - lastMonthTotalAppts) / lastMonthTotalAppts) * 100)
+      : totalAppointments > 0 ? 100 : 0
+
+    const lastMonthNewCust = lastMonthNewCustomers || 0
+    const thisMonthNewCust = newCustomers || 0
+    const newCustomerChange = lastMonthNewCust > 0
+      ? Math.round(((thisMonthNewCust - lastMonthNewCust) / lastMonthNewCust) * 100)
+      : thisMonthNewCust > 0 ? 100 : 0
+
+    const retentionChange = lastMonthRetention > 0
+      ? retentionRate - lastMonthRetention
+      : 0
 
     return NextResponse.json({
       data: {
@@ -84,10 +109,15 @@ export async function GET() {
         activeCustomers: totalCustomers || 0,
         totalPets: totalPets || 0,
         totalAppointments,
-        newCustomers: newCustomers || 0,
+        newCustomers: thisMonthNewCust,
         retentionRate,
         lastMonthRetention,
         weekTotalAppts,
+        // KPI change percentages
+        revenueChange,
+        appointmentChange,
+        newCustomerChange,
+        retentionChange,
       },
     })
   } catch (e: any) {
