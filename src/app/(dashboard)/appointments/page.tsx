@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
-import { Plus, ChevronLeft, ChevronRight, MoreHorizontal, Clock, User, PawPrint, Scissors, Loader2 } from "lucide-react"
+import { Plus, ChevronLeft, ChevronRight, MoreHorizontal, Clock, User, PawPrint, Scissors, Loader2, Camera, ImageIcon } from "lucide-react"
 import type { AppointmentWithDetails, Customer, Pet, Staff, Service } from "@/types"
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
@@ -50,6 +50,7 @@ export default function AppointmentsPage() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null)
+  const [uploadingPhoto, setUploadingPhoto] = useState<string | null>(null) // appointment id
 
   const [form, setForm] = useState({
     customer_id: "",
@@ -141,6 +142,29 @@ export default function AppointmentsPage() {
       })
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  async function handlePhotoUpload(apptId: string, photoType: "before" | "after", file: File) {
+    setUploadingPhoto(apptId)
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("type", photoType)
+
+      const res = await fetch(`/api/appointments/${apptId}/photos`, {
+        method: "POST",
+        body: formData,
+      })
+      if (!res.ok) {
+        const json = await res.json()
+        throw new Error(json.error || "Upload failed")
+      }
+      await fetchData() // refresh to show new photo
+    } catch (err: unknown) {
+      console.error("Photo upload failed:", err)
+    } finally {
+      setUploadingPhoto(null)
     }
   }
 
@@ -370,6 +394,78 @@ export default function AppointmentsPage() {
                       </Button>
                     </div>
                   </div>
+                  {/* Photo section */}
+                  {(apt.photo_before_url || apt.photo_after_url || apt.status !== "canceled") && (
+                    <div className="mt-3 flex items-center gap-3 border-t pt-3">
+                      {/* Before Photo */}
+                      <div className="flex items-center gap-2">
+                        <label className="relative group cursor-pointer">
+                          {apt.photo_before_url ? (
+                            <img
+                              src={apt.photo_before_url}
+                              alt="Before"
+                              className="h-12 w-12 rounded-lg object-cover border"
+                            />
+                          ) : (
+                            <div className="flex h-12 w-12 items-center justify-center rounded-lg border-2 border-dashed bg-muted/30 text-muted-foreground group-hover:border-primary/50 transition-colors">
+                              {uploadingPhoto === apt.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Camera className="h-4 w-4" />
+                              )}
+                            </div>
+                          )}
+                          <span className="absolute -bottom-4 left-1/2 -translate-x-1/2 text-[10px] text-muted-foreground whitespace-nowrap">
+                            Before
+                          </span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0]
+                              if (file) handlePhotoUpload(apt.id, "before", file)
+                            }}
+                            disabled={uploadingPhoto === apt.id}
+                          />
+                        </label>
+                      </div>
+
+                      {/* After Photo */}
+                      <div className="flex items-center gap-2">
+                        <label className="relative group cursor-pointer">
+                          {apt.photo_after_url ? (
+                            <img
+                              src={apt.photo_after_url}
+                              alt="After"
+                              className="h-12 w-12 rounded-lg object-cover border"
+                            />
+                          ) : (
+                            <div className="flex h-12 w-12 items-center justify-center rounded-lg border-2 border-dashed bg-muted/30 text-muted-foreground group-hover:border-primary/50 transition-colors">
+                              {uploadingPhoto === apt.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <ImageIcon className="h-4 w-4" />
+                              )}
+                            </div>
+                          )}
+                          <span className="absolute -bottom-4 left-1/2 -translate-x-1/2 text-[10px] text-muted-foreground whitespace-nowrap">
+                            After
+                          </span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0]
+                              if (file) handlePhotoUpload(apt.id, "after", file)
+                            }}
+                            disabled={uploadingPhoto === apt.id}
+                          />
+                        </label>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )

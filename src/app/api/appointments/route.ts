@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { sendConfirmationEmail } from "@/lib/notifications"
 
 async function getShopId() {
   const supabase = await createClient()
@@ -64,6 +65,31 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    // Send confirmation email to customer (non-blocking)
+    try {
+      const { customer_id, pet_id } = body
+      const [{ data: customer }, { data: pet }, { data: shop }] = await Promise.all([
+        supabase.from("customers").select("name, email").eq("id", customer_id).single(),
+        supabase.from("pets").select("name").eq("id", pet_id).single(),
+        supabase.from("shops").select("name").eq("id", shopId).single(),
+      ])
+
+      if (customer?.email) {
+        sendConfirmationEmail({
+          customerName: customer.name,
+          customerEmail: customer.email,
+          petName: pet?.name || "your pet",
+          serviceName: "grooming",
+          startTime: data.start_time,
+          shopName: shop?.name || "GroomingPro",
+          bookingLink: `https://petsalonos.com/booking/${shopId}`,
+        }).catch(() => {}) // fire-and-forget
+      }
+    } catch {
+      // Email failure should not block appointment creation
+    }
+
     return NextResponse.json({ data }, { status: 201 })
   } catch (e: any) {
     if (e.message === "Unauthorized") return NextResponse.json({ error: "Unauthorized" }, { status: 401 })

@@ -122,6 +122,9 @@ export interface Appointment {
   is_paid: boolean
   created_by: 'shop' | 'customer'
   created_at: string
+  reminder_sent_at: string | null
+  photo_before_url: string | null
+  photo_after_url: string | null
 }
 
 // ── Appointment (with joins) ──────────────────────────────────

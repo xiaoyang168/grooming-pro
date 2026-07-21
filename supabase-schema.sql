@@ -99,7 +99,10 @@ CREATE TABLE appointments (
     price INTEGER DEFAULT 0,
     is_paid BOOLEAN DEFAULT false,
     created_by TEXT DEFAULT 'shop' CHECK (created_by IN ('shop', 'customer')),
-    created_at TIMESTAMPTZ DEFAULT NOW()
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    reminder_sent_at TIMESTAMPTZ,
+    photo_before_url TEXT,
+    photo_after_url TEXT
 );
 
 -- ── Auto-create shop for new users ───────────────────────────
