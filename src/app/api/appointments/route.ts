@@ -58,6 +58,15 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createClient()
     const body = await request.json()
+
+    // Server-side validation
+    if (!body.customer_id || !body.pet_id || !body.service_ids?.length) {
+      return NextResponse.json(
+        { error: "Missing required fields: customer_id, pet_id, service_ids" },
+        { status: 400 }
+      )
+    }
+
     const { data, error } = await supabase
       .from("appointments")
       .insert({ ...body, shop_id: shopId })

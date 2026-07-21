@@ -105,8 +105,27 @@ export default function AppointmentsPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setSubmitting(true)
     setFeedback(null)
+
+    // Client-side validation
+    if (!form.customer_id) {
+      setFeedback({ type: "error", message: "Please select a customer" })
+      return
+    }
+    if (!form.pet_id) {
+      setFeedback({ type: "error", message: "Please select a pet" })
+      return
+    }
+    if (!form.service_id) {
+      setFeedback({ type: "error", message: "Please select a service" })
+      return
+    }
+    if (!form.date || !form.time) {
+      setFeedback({ type: "error", message: "Please select date and time" })
+      return
+    }
+
+    setSubmitting(true)
     try {
       const selectedService = services.find((s) => s.id === form.service_id)
       const duration = selectedService?.duration_minutes || 60
