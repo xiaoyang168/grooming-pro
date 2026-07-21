@@ -82,7 +82,7 @@ export default function SettingsPage() {
   }
 
   async function openShare() {
-    const url = shop?.slug ? `https://petalones.com/booking/${shop.slug}` : ""
+    const url = shop?.slug ? `https://petsalonos.com/booking/${shop.slug}` : ""
     if (!url) return
     try {
       const dataUrl = await QRCode.toDataURL(url, { width: 240, margin: 1, color: { dark: "#6366f1", light: "#ffffff" } })
@@ -92,14 +92,14 @@ export default function SettingsPage() {
   }
 
   async function copyBookingLink() {
-    const url = shop?.slug ? `https://petalones.com/booking/${shop.slug}` : ""
+    const url = shop?.slug ? `https://petsalonos.com/booking/${shop.slug}` : ""
     if (!url) return
     await navigator.clipboard.writeText(url)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const bookingLink = shop?.slug ? `https://petalones.com/booking/${shop.slug}` : ""
+  const bookingLink = shop?.slug ? `https://petsalonos.com/booking/${shop.slug}` : ""
 
   async function fetchData() {
     try {
