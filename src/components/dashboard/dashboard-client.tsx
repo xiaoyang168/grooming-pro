@@ -83,10 +83,10 @@ export function DashboardClient() {
     `$${(cents / 100).toLocaleString()}`
 
   const statCards = [
-    { label: "Today's Appointments", value: String(stats.todayAppointments), icon: CalendarCheck, color: "text-primary", bg: "bg-primary/10" },
-    { label: "Monthly Revenue", value: formatCurrency(stats.monthlyRevenue), icon: TrendingUp, color: "text-emerald-500", bg: "bg-emerald-50" },
-    { label: "Active Customers", value: String(stats.activeCustomers), icon: Users, color: "text-blue-500", bg: "bg-blue-50" },
-    { label: "Pets", value: String(stats.totalPets), icon: PawPrint, color: "text-violet-500", bg: "bg-violet-50" },
+    { label: "Today's Appointments", value: String(stats.todayAppointments ?? 0), icon: CalendarCheck, color: "text-primary", bg: "bg-primary/10" },
+    { label: "Monthly Revenue", value: formatCurrency(stats.monthlyRevenue ?? 0), icon: TrendingUp, color: "text-emerald-500", bg: "bg-emerald-50" },
+    { label: "Active Customers", value: String(stats.activeCustomers ?? 0), icon: Users, color: "text-blue-500", bg: "bg-blue-50" },
+    { label: "Pets", value: String(stats.totalPets ?? 0), icon: PawPrint, color: "text-violet-500", bg: "bg-violet-50" },
   ]
 
   const aiInsights = [
@@ -279,9 +279,9 @@ export function DashboardClient() {
             <CardContent>
               <div className="space-y-3">
                 {[
-                  { label: "Completion Rate", value: `${stats.completionRate}%` },
-                  { label: "Total Appointments", value: String(stats.weekTotalAppts || 0) },
-                  { label: "Active Customers", value: String(stats.activeCustomers) },
+                  { label: "Completion Rate", value: `${stats.completionRate ?? 0}%` },
+                  { label: "Total Appointments", value: String(stats.weekTotalAppts ?? 0) },
+                  { label: "Active Customers", value: String(stats.activeCustomers ?? 0) },
                 ].map((item, i) => (
                   <div key={i} className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">{item.label}</span>

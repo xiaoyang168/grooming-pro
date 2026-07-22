@@ -111,6 +111,7 @@ export async function GET() {
         totalAppointments,
         newCustomers: thisMonthNewCust,
         retentionRate,
+        completionRate: retentionRate, // alias for UI
         lastMonthRetention,
         weekTotalAppts,
         // KPI change percentages
