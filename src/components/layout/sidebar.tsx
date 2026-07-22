@@ -19,7 +19,7 @@ const navigation = [
 
 export function Sidebar() {
   const pathname = usePathname()
-  const [tier, setTier] = useState<string>("free")
+  const [tier, setTier] = useState<string | null>(null)
 
   useEffect(() => {
     fetch("/api/shop")
@@ -27,7 +27,7 @@ export function Sidebar() {
       .then((res) => {
         if (res.data?.subscription_tier) setTier(res.data.subscription_tier)
       })
-      .catch(() => {})
+      .catch(() => setTier("unknown"))
   }, [pathname])
 
   const isPro = tier === "pro" || tier === "business"
@@ -78,11 +78,11 @@ export function Sidebar() {
               <PawPrint className="h-4 w-4 text-primary" />
             )}
             <span className="text-xs font-semibold">
-              {tier === "pro" ? "Pro Plan" : tier === "business" ? "Business Plan" : "Free Plan"}
+              {tier === "pro" ? "Pro Plan" : tier === "business" ? "Business Plan" : tier === "unknown" ? "Loading..." : "Free Plan"}
             </span>
           </div>
           <p className="text-xs text-muted-foreground">
-            {isPro ? "All features unlocked" : "Upgrade to Pro to unlock AI features"}
+            {tier === "unknown" ? "" : isPro ? "All features unlocked" : "Upgrade to Pro to unlock AI features"}
           </p>
         </div>
       </div>

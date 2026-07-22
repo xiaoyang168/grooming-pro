@@ -5,7 +5,7 @@ import { PawPrint, Clock, Scissors, Sparkles, Loader2, CheckCircle, AlertCircle,
 import QRCode from "qrcode"
 
 interface ShopData {
-  shop: { id: string; name: string; phone: string; email: string; address: string }
+  shop: { id: string; name: string; phone: string; email: string; address: string; business_hours?: Record<string, { open: string; close: string }> }
   services: Array<{ id: string; name: string; category: string; duration_minutes: number; price: number; description: string }>
 }
 
@@ -140,7 +140,18 @@ export default function BookingPage({ params }: { params: Promise<{ shopId: stri
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const timeSlots = generateTimeSlots(null)
+  // Get shop's business hours for the selected date's day of week
+  const getBusinessHoursForDate = () => {
+    if (!data?.shop?.business_hours) return null
+    const hours = data.shop.business_hours
+    const dayNames = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"]
+    const d = selectedDate ? new Date(selectedDate + "T00:00:00") : new Date()
+    const dayKey = dayNames[d.getDay()]
+    return hours[dayKey] || null
+  }
+
+  const businessHours = getBusinessHoursForDate()
+  const timeSlots = generateTimeSlots(businessHours)
   const svc = data?.services?.[selectedService]
   const today = new Date().toISOString().slice(0, 10)
 

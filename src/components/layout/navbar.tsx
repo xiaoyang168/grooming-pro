@@ -22,6 +22,8 @@ export function Navbar() {
   const [open, setOpen] = useState(false)
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [shopName, setShopName] = useState("Welcome back")
+  const [tier, setTier] = useState<string | null>(null)
+  const [trialEndsAt, setTrialEndsAt] = useState<string | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -42,6 +44,8 @@ export function Navbar() {
       if (res.ok) {
         const json = await res.json()
         if (json.data?.name) setShopName(json.data.name)
+        if (json.data?.subscription_tier) setTier(json.data.subscription_tier)
+        if (json.data?.trial_ends_at) setTrialEndsAt(json.data.trial_ends_at)
       }
 
       const today = new Date().toISOString().slice(0, 10)
@@ -201,9 +205,21 @@ export function Navbar() {
           )}
         </div>
 
-        <Badge variant="default" className="h-8 gap-1 mr-1">
-          <Sparkles className="h-3 w-3" />Pro Trial
-        </Badge>
+        {tier ? (
+          tier === "free" ? (
+            <Badge variant="default" className="h-8 gap-1 mr-1">
+              <Sparkles className="h-3 w-3" />{trialEndsAt ? `${Math.max(0, Math.ceil((new Date(trialEndsAt).getTime() - Date.now()) / 86400000))}d trial` : "Free Plan"}
+            </Badge>
+          ) : (
+            <Badge variant="default" className="h-8 gap-1 mr-1 bg-emerald-600 hover:bg-emerald-600">
+              <Sparkles className="h-3 w-3" />{tier === "pro" ? "Pro" : "Business"}
+            </Badge>
+          )
+        ) : (
+          <Badge variant="default" className="h-8 gap-1 mr-1">
+            <Sparkles className="h-3 w-3" />Pro Trial
+          </Badge>
+        )}
         <Button variant="ghost" size="icon" onClick={handleSignOut} title="Sign out">
           <LogOut className="h-4 w-4 text-muted-foreground" />
         </Button>

@@ -25,6 +25,7 @@ export function DashboardClient() {
   const router = useRouter()
   const [greeting, setGreeting] = useState("")
   const [loading, setLoading] = useState(true)
+  const [fetchError, setFetchError] = useState(false)
   const [stats, setStats] = useState({
     todayAppointments: 0,
     monthlyRevenue: 0,
@@ -54,6 +55,7 @@ export function DashboardClient() {
       if (apptRes.data) setAppointments(apptRes.data)
     } catch (e) {
       console.error("Failed to fetch dashboard data:", e)
+      setFetchError(true)
     } finally {
       setLoading(false)
     }
@@ -88,6 +90,19 @@ export function DashboardClient() {
     return (
       <div className="flex items-center justify-center py-32">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
+
+  if (fetchError) {
+    return (
+      <div className="py-16 text-center">
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-red-100">
+          <TrendingUp className="h-8 w-8 text-red-500" />
+        </div>
+        <p className="text-lg font-semibold text-muted-foreground">Unable to load dashboard</p>
+        <p className="text-sm text-muted-foreground mt-1 mb-4">Check your internet connection and try again.</p>
+        <Button variant="outline" onClick={() => window.location.reload()}>Retry</Button>
       </div>
     )
   }

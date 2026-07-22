@@ -274,7 +274,11 @@ export function LandingPage() {
               <div key={i}>
                 <h4 className="font-semibold text-sm mb-3">{col.title}</h4>
                 <ul className="space-y-2">
-                  {col.links.map((l, j) => (<li key={j}><a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">{l}</a></li>))}
+                  {col.links.map((l, j) => (
+                    <li key={j}>
+                      <span className="text-sm text-muted-foreground cursor-default">{l}</span>
+                    </li>
+                  ))}
                 </ul>
               </div>
             ))}

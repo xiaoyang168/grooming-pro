@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { naturalLanguageQuery } from "@/lib/ai"
 import { isDemoMode } from "@/lib/demo"
+import { requireProTier, AuthError } from "@/lib/auth-guard"
 
 export async function POST(request: NextRequest) {
   const demo = await isDemoMode()
@@ -27,19 +28,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ data: { answer } })
     }
 
+    // Paywall check: require Pro tier or active trial
+    const { shopId } = await requireProTier()
+
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-
-    const { data: shop } = await supabase
-      .from("shops")
-      .select("id")
-      .eq("owner_id", user.id)
-      .single()
-
-    if (!shop) return NextResponse.json({ error: "No shop found" }, { status: 404 })
-
-    const shopId = shop.id
     const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()
 
     const [
@@ -60,7 +52,6 @@ export async function POST(request: NextRequest) {
 
     const monthlyRevenue = (monthAppts || []).reduce((sum: number, a: any) => sum + (a.price || 0), 0)
 
-    // Count service appearances
     const serviceCounts: Record<string, number> = {}
     for (const a of topServices || []) {
       for (const sid of a.service_ids || []) {
@@ -72,10 +63,9 @@ export async function POST(request: NextRequest) {
       .slice(0, 5)
       .map(([name, count]) => ({ name, count }))
 
-    // If we have real service names, we could join, but for now use counts
     const topCustomersList = (topCustomers || []).map((c: any) => ({
       name: c.name,
-      spent: Math.round((c.total_spent || 0) / 100), // cents → dollars
+      spent: Math.round((c.total_spent || 0) / 100),
     }))
 
     const answer = await naturalLanguageQuery({
@@ -84,7 +74,7 @@ export async function POST(request: NextRequest) {
         total_customers: totalCustomers || 0,
         total_pets: totalPets || 0,
         total_appointments: totalAppointments || 0,
-        monthly_revenue: Math.round(monthlyRevenue / 100), // cents → dollars
+        monthly_revenue: Math.round(monthlyRevenue / 100),
         top_services: topServicesList,
         top_customers: topCustomersList,
       },
@@ -92,6 +82,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ data: { answer } })
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
     return NextResponse.json({
       error: error instanceof Error ? error.message : "AI query failed"
     }, { status: 500 })

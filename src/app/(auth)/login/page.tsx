@@ -17,6 +17,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [successMsg, setSuccessMsg] = useState("")
   const [mode, setMode] = useState<"login" | "signup">("login")
   const [rememberMe, setRememberMe] = useState(true)
   const [showPassword, setShowPassword] = useState(false)
@@ -50,6 +51,7 @@ export default function LoginPage() {
     e.preventDefault()
     setLoading(true)
     setError("")
+    setSuccessMsg("")
 
     try {
       if (mode === "signup") {
@@ -62,7 +64,7 @@ export default function LoginPage() {
         })
         if (error) throw error
         if (rememberMe) localStorage.setItem(REMEMBERED_EMAIL_KEY, email)
-        setError("Check your email for the confirmation link!")
+        setSuccessMsg("Check your email for the confirmation link!")
         return
       }
 
@@ -190,8 +192,13 @@ export default function LoginPage() {
                 </label>
               )}
               {error && (
-                <div className={`rounded-lg px-3 py-2 text-sm ${error.includes("confirmation") ? "bg-emerald-50 text-emerald-700" : "bg-destructive/10 text-destructive"}`}>
+                <div className="rounded-lg px-3 py-2 text-sm bg-destructive/10 text-destructive">
                   {error}
+                </div>
+              )}
+              {successMsg && (
+                <div className="rounded-lg px-3 py-2 text-sm bg-emerald-50 text-emerald-700">
+                  {successMsg}
                 </div>
               )}
               <Button type="submit" variant="gradient" className="w-full" size="lg" disabled={loading}>
@@ -222,6 +229,7 @@ export default function LoginPage() {
               onClick={() => {
                 setMode(mode === "login" ? "signup" : "login")
                 setError("")
+                setSuccessMsg("")
               }}
             >
               {mode === "login" ? "Sign up free" : "Sign in now"}

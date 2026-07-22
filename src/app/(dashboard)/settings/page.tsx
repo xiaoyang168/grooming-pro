@@ -75,8 +75,10 @@ export default function SettingsPage() {
       if (!res.ok) throw new Error(json.error || "Stripe error")
       if (json.url) window.location.href = json.url
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Stripe checkout failed — keys may not be configured")
-    } finally {
+      setSaveMsg({
+        type: "error",
+        text: err instanceof Error ? err.message : "Stripe checkout failed — keys may not be configured",
+      })
       setUpgradeLoading(false)
     }
   }
@@ -197,7 +199,7 @@ export default function SettingsPage() {
       await fetchData()
       setServiceDialogOpen(false)
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Failed to add service")
+      setSaveMsg({ type: "error", text: err instanceof Error ? err.message : "Failed to add service" })
     } finally {
       setServiceSubmitting(false)
     }
@@ -528,7 +530,7 @@ export default function SettingsPage() {
             </div>
             {shop?.subscription_status === "active" ? (
               <Button variant="outline" asChild>
-                <a href="https://dashboard.stripe.com/test/subscriptions" target="_blank" rel="noopener">
+                <a href={`https://dashboard.stripe.com/${process.env.NEXT_PUBLIC_APP_URL?.includes("localhost") ? "test/" : ""}subscriptions`} target="_blank" rel="noopener">
                   Manage in Stripe
                 </a>
               </Button>

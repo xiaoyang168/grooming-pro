@@ -11,7 +11,7 @@ interface ChatMessage {
 
 async function callDeepSeek(messages: ChatMessage[], temperature = 0.7): Promise<string> {
   const apiKey = process.env.DEEPSEEK_API_KEY
-  if (!apiKey) throw new Error("DEEPSEEK_API_KEY not configured")
+  if (!apiKey) return JSON.stringify({ error: "DEEPSEEK_API_KEY not configured" })
 
   const response = await fetch(DEEPSEEK_API_URL, {
     method: "POST",
@@ -28,7 +28,7 @@ async function callDeepSeek(messages: ChatMessage[], temperature = 0.7): Promise
   })
 
   if (!response.ok) {
-    throw new Error(`DeepSeek API error: ${response.status}`)
+    return JSON.stringify({ error: `DeepSeek API error: ${response.status}` })
   }
 
   const data = await response.json()
