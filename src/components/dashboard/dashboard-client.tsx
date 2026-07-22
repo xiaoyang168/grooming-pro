@@ -36,12 +36,30 @@ export function DashboardClient() {
     weekNewCustomers: 0,
   })
   const [appointments, setAppointments] = useState<AppointmentWithDetails[]>([])
+  const [isNewUser, setIsNewUser] = useState(false)
+  const [shopSlug, setShopSlug] = useState("")
 
   useEffect(() => {
     const hour = new Date().getHours()
     setGreeting(hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening")
     fetchData()
+    checkNewUser()
   }, [])
+
+  async function checkNewUser() {
+    try {
+      const res = await fetch("/api/shop")
+      const json = await res.json()
+      if (json.data) {
+        if (json.data.slug) setShopSlug(json.data.slug)
+        // Check if shop was created recently (no services yet)
+        const svcRes = await fetch("/api/services")
+        const svcJson = await svcRes.json()
+        const hasServices = svcJson.data && svcJson.data.length > 0
+        if (!hasServices) setIsNewUser(true)
+      }
+    } catch { /* ignore */ }
+  }
 
   async function fetchData() {
     setLoading(true)
@@ -119,6 +137,39 @@ export function DashboardClient() {
           <CalendarCheck className="h-4 w-4 mr-2" />New Appointment
         </Button>
       </div>
+
+      {isNewUser && (
+        <div className="rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/5 via-amber-400/5 to-primary/5 p-6 animate-slide-up">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/20">
+              <Sparkles className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h3 className="font-bold text-lg">Welcome to GroomingPro!</h3>
+              <p className="text-sm text-muted-foreground">Complete these 3 steps to start accepting bookings:</p>
+            </div>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            {[
+              { step: "1", title: "Set Up Your Shop", desc: "Add your salon name, address, and business hours", href: "/settings" },
+              { step: "2", title: "Add Services", desc: "Create grooming services with prices and durations", href: "/settings" },
+              { step: "3", title: "Share Booking Link", desc: "Send your online booking page to customers", href: "/settings" },
+            ].map((item) => (
+              <a key={item.step} href={item.href}
+                className="flex items-start gap-3 rounded-xl border border-dashed border-primary/30 bg-white/50 p-4 hover:border-primary hover:shadow-sm transition-all group"
+              >
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary text-white text-xs font-bold">
+                  {item.step}
+                </span>
+                <div>
+                  <p className="text-sm font-semibold group-hover:text-primary transition-colors">{item.title}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{item.desc}</p>
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Stat Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

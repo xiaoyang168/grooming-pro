@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
-import { Plus, ChevronLeft, ChevronRight, MoreHorizontal, Clock, User, PawPrint, Scissors, Loader2, Camera, ImageIcon } from "lucide-react"
+import { Plus, ChevronLeft, ChevronRight, MoreHorizontal, Clock, User, PawPrint, Scissors, Loader2, Camera, ImageIcon, Check, X } from "lucide-react"
 import type { AppointmentWithDetails, Customer, Pet, Staff, Service } from "@/types"
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
@@ -51,6 +51,7 @@ export default function AppointmentsPage() {
   const [submitting, setSubmitting] = useState(false)
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null)
   const [uploadingPhoto, setUploadingPhoto] = useState<string | null>(null) // appointment id
+  const [statusMenuId, setStatusMenuId] = useState<string | null>(null) // open status dropdown for appointment id
 
   const [form, setForm] = useState({
     customer_id: "",
@@ -92,6 +93,16 @@ export default function AppointmentsPage() {
   useEffect(() => {
     fetchData()
   }, [offset])
+
+  // Close status dropdown on outside click
+  useEffect(() => {
+    if (!statusMenuId) return
+    const handler = (e: MouseEvent) => {
+      if (!(e.target as Element).closest(".status-dropdown")) setStatusMenuId(null)
+    }
+    document.addEventListener("mousedown", handler)
+    return () => document.removeEventListener("mousedown", handler)
+  }, [statusMenuId])
 
   const filteredApps =
     filter === "All"
@@ -184,6 +195,20 @@ export default function AppointmentsPage() {
       console.error("Photo upload failed:", err)
     } finally {
       setUploadingPhoto(null)
+    }
+  }
+
+  async function handleStatusChange(apptId: string, newStatus: string) {
+    setStatusMenuId(null)
+    try {
+      await fetch(`/api/appointments/${apptId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      })
+      await fetchData()
+    } catch (err) {
+      console.error("Status update failed:", err)
     }
   }
 
@@ -408,9 +433,36 @@ export default function AppointmentsPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge variant={status.variant}>{status.label}</Badge>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
+                      <div className="relative">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => setStatusMenuId(statusMenuId === apt.id ? null : apt.id)}
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                        {statusMenuId === apt.id && (
+                          <div className="absolute right-0 top-full mt-1 w-36 rounded-lg border bg-white shadow-lg z-10 py-1 status-dropdown">
+                            {apt.status !== "completed" && (
+                              <button
+                                className="flex items-center gap-2 w-full px-3 py-2 text-xs text-left hover:bg-emerald-50 hover:text-emerald-700 transition-colors"
+                                onClick={() => handleStatusChange(apt.id, "completed")}
+                              >
+                                <Check className="h-3 w-3" /> Mark Completed
+                              </button>
+                            )}
+                            {apt.status !== "canceled" && (
+                              <button
+                                className="flex items-center gap-2 w-full px-3 py-2 text-xs text-left hover:bg-red-50 hover:text-red-700 transition-colors"
+                                onClick={() => handleStatusChange(apt.id, "canceled")}
+                              >
+                                <X className="h-3 w-3" /> Cancel
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                   {/* Photo section */}
