@@ -5,7 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import {
-  LayoutDashboard, CalendarDays, Users, PawPrint, BarChart3, Settings, Sparkles,
+  LayoutDashboard, CalendarDays, Users, PawPrint, BarChart3, Settings, Sparkles, Megaphone,
 } from "lucide-react"
 
 const navigation = [
@@ -14,6 +14,7 @@ const navigation = [
   { name: "Customers", href: "/customers", icon: Users },
   { name: "Pets", href: "/pets", icon: PawPrint },
   { name: "Reports", href: "/reports", icon: BarChart3 },
+  { name: "Marketing", href: "/marketing", icon: Megaphone, badge: "AI" },
   { name: "Settings", href: "/settings", icon: Settings },
 ]
 
@@ -57,7 +58,12 @@ export function Sidebar() {
             >
               <item.icon className={cn("h-4.5 w-4.5", isActive && "text-primary")} />
               {item.name}
-              {isActive && <div className="ml-auto h-1.5 w-1.5 rounded-full bg-primary" />}
+              {item.badge && (
+                <span className="ml-auto rounded-full bg-gradient-to-r from-primary to-pink-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                  {item.badge}
+                </span>
+              )}
+              {!item.badge && isActive && <div className="ml-auto h-1.5 w-1.5 rounded-full bg-primary" />}
             </Link>
           )
         })}

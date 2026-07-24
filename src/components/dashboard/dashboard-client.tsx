@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
   CalendarCheck, Users, TrendingUp, Sparkles, Clock, ArrowUpRight, ArrowRight,
+  CheckCircle2,
   PawPrint, MoreHorizontal, Loader2,
 } from "lucide-react"
 import type { AppointmentWithDetails } from "@/types"
@@ -37,6 +38,8 @@ export function DashboardClient() {
   })
   const [appointments, setAppointments] = useState<AppointmentWithDetails[]>([])
   const [isNewUser, setIsNewUser] = useState(false)
+  const [setupProgress, setSetupProgress] = useState({ services: false, shopInfo: false, share: false })
+  const [onboardingDismissed, setOnboardingDismissed] = useState(false)
   const [shopSlug, setShopSlug] = useState("")
 
   useEffect(() => {
@@ -52,12 +55,18 @@ export function DashboardClient() {
       const json = await res.json()
       if (json.data) {
         if (json.data.slug) setShopSlug(json.data.slug)
-        // Check if shop was created recently (no services yet)
-        const svcRes = await fetch("/api/services")
-        const svcJson = await svcRes.json()
-        const hasServices = svcJson.data && svcJson.data.length > 0
-        if (!hasServices) setIsNewUser(true)
+        // Check if shop has been set up
+        const hasName = !!(json.data.name && json.data.name !== "My Grooming Salon")
+        const hasHours = !!json.data.business_hours && Object.keys(json.data.business_hours || {}).length > 0
+        setSetupProgress((p) => ({ ...p, shopInfo: hasName && hasHours }))
       }
+
+      const svcRes = await fetch("/api/services")
+      const svcJson = await svcRes.json()
+      const hasServices = svcJson.data && svcJson.data.length > 0
+      setSetupProgress((p) => ({ ...p, services: hasServices }))
+
+      if (!hasServices) setIsNewUser(true)
     } catch { /* ignore */ }
   }
 
@@ -138,38 +147,68 @@ export function DashboardClient() {
         </Button>
       </div>
 
-      {isNewUser && (
-        <div className="rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/5 via-amber-400/5 to-primary/5 p-6 animate-slide-up">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/20">
-              <Sparkles className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <h3 className="font-bold text-lg">Welcome to GroomingPro!</h3>
-              <p className="text-sm text-muted-foreground">Complete these 3 steps to start accepting bookings:</p>
-            </div>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-3">
-            {[
-              { step: "1", title: "Set Up Your Shop", desc: "Add your salon name, address, and business hours", href: "/settings" },
-              { step: "2", title: "Add Services", desc: "Create grooming services with prices and durations", href: "/settings" },
-              { step: "3", title: "Share Booking Link", desc: "Send your online booking page to customers", href: "/settings" },
-            ].map((item) => (
-              <a key={item.step} href={item.href}
-                className="flex items-start gap-3 rounded-xl border border-dashed border-primary/30 bg-white/50 p-4 hover:border-primary hover:shadow-sm transition-all group"
-              >
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary text-white text-xs font-bold">
-                  {item.step}
-                </span>
-                <div>
-                  <p className="text-sm font-semibold group-hover:text-primary transition-colors">{item.title}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{item.desc}</p>
+      {isNewUser && !onboardingDismissed && (() => {
+        const completedCount = Object.values(setupProgress).filter(Boolean).length
+        const allDone = completedCount === 3
+        return (
+          <div className={`rounded-2xl border p-6 animate-slide-up ${allDone ? "border-emerald-300 bg-gradient-to-r from-emerald-50 via-amber-50 to-emerald-50" : "border-primary/20 bg-gradient-to-r from-primary/5 via-amber-400/5 to-primary/5"}`}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${allDone ? "bg-emerald-500 text-white" : "bg-primary/20"}`}>
+                  {allDone ? <CheckCircle2 className="h-5 w-5" /> : <Sparkles className="h-5 w-5 text-primary" />}
                 </div>
-              </a>
-            ))}
+                <div>
+                  <h3 className="font-bold text-lg">
+                    {allDone ? "All set up! 🎉" : "Welcome to GroomingPro!"}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {allDone ? "Your salon is ready to accept bookings." : `${completedCount}/3 setup steps completed`}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setOnboardingDismissed(true)}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                Dismiss
+              </button>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="mb-4 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+              <div
+                className={`h-full transition-all duration-500 ${allDone ? "bg-emerald-500" : "bg-primary"}`}
+                style={{ width: `${(completedCount / 3) * 100}%` }}
+              />
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-3">
+              {[
+                { key: "shopInfo", step: "1", title: "Set Up Your Shop", desc: "Add name, address, and business hours", href: "/settings" },
+                { key: "services", step: "2", title: "Add Services", desc: "Create grooming services with prices and durations", href: "/settings" },
+                { key: "share", step: "3", title: "Share Booking Link", desc: "Send your online booking page to customers", href: "/settings" },
+              ].map((item) => {
+                const isComplete = setupProgress[item.key as keyof typeof setupProgress]
+                return (
+                  <a key={item.step} href={item.href}
+                    className={`relative flex items-start gap-3 rounded-xl border p-4 transition-all group ${isComplete ? "border-emerald-300 bg-emerald-50/40" : "border-dashed border-primary/30 bg-white/50 hover:border-primary hover:shadow-sm"}`}
+                  >
+                    <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs font-bold transition-all ${isComplete ? "bg-emerald-500 text-white" : "bg-primary text-white"}`}>
+                      {isComplete ? "✓" : item.step}
+                    </span>
+                    <div>
+                      <p className={`text-sm font-semibold ${isComplete ? "text-emerald-700 line-through opacity-60" : "group-hover:text-primary"} transition-colors`}>
+                        {item.title}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{item.desc}</p>
+                    </div>
+                  </a>
+                )
+              })}
+            </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       {/* Stat Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
