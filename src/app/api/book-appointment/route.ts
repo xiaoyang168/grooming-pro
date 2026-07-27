@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { sendConfirmationEmail } from "@/lib/notifications"
 
 export async function POST(request: NextRequest) {
   try {
@@ -67,7 +68,7 @@ export async function POST(request: NextRequest) {
     // Get service duration
     const { data: service } = await supabase
       .from("services")
-      .select("duration_minutes, price")
+      .select("name, duration_minutes, price")
       .eq("id", service_id)
       .single()
 
@@ -75,6 +76,22 @@ export async function POST(request: NextRequest) {
 
     const duration = service.duration_minutes
     const endTime = new Date(new Date(start_time).getTime() + duration * 60000).toISOString()
+
+    // Check for time conflicts (existing appointment overlapping this time slot)
+    const { data: conflicts } = await supabase
+      .from("appointments")
+      .select("id")
+      .eq("shop_id", shop_id)
+      .in("status", ["confirmed", "pending", "in_progress", "checked_in"])
+      .or(`and(start_time.lt.${endTime},end_time.gt.${start_time})`)
+      .limit(1)
+
+    if (conflicts && conflicts.length > 0) {
+      return NextResponse.json(
+        { error: "This time slot is already booked. Please choose a different time." },
+        { status: 409 }
+      )
+    }
 
     // Create appointment
     const { data: appointment, error: apptErr } = await supabase
@@ -95,6 +112,25 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (apptErr) return NextResponse.json({ error: apptErr.message }, { status: 500 })
+
+    // Send confirmation email to customer
+    if (customer_email) {
+      const { data: shop } = await supabase
+        .from("shops")
+        .select("name, slug")
+        .eq("id", shop_id)
+        .single()
+
+      await sendConfirmationEmail({
+        customerName: customer_name,
+        customerEmail: customer_email,
+        petName: pet_name,
+        serviceName: service.name || notes || "Grooming",
+        startTime: start_time,
+        shopName: shop?.name || "GroomingPro",
+        bookingLink: shop?.slug ? `${process.env.NEXT_PUBLIC_APP_URL}/booking/${shop.slug}` : undefined,
+      })
+    }
 
     return NextResponse.json({
       data: {

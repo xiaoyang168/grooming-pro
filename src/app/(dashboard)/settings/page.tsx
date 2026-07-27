@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Store, Clock, Scissors, CreditCard, Plus, Pencil, Sparkles, Loader2, Share2, Copy, X, CheckCircle } from "lucide-react"
+import { Store, Clock, Scissors, CreditCard, Plus, Pencil, Sparkles, Loader2, Share2, Copy, X, CheckCircle, Users, Trash2 } from "lucide-react"
 import QRCode from "qrcode"
 import type { Service } from "@/types"
 
@@ -62,6 +62,11 @@ export default function SettingsPage() {
     price: "",
     description: "",
   })
+
+  // Staff state
+  const [staffList, setStaffList] = useState<{ id: string; name: string; role: string; phone: string | null; email: string | null; is_active: boolean }[]>([])
+  const [staffDialogOpen, setStaffDialogOpen] = useState(false)
+  const [staffForm, setStaffForm] = useState({ name: "", role: "groomer", phone: "", email: "" })
 
   async function handleUpgrade(plan: "pro" | "business") {
     setUpgradeLoading(true)
@@ -105,11 +110,13 @@ export default function SettingsPage() {
 
   async function fetchData() {
     try {
-      const [svcRes, shopRes] = await Promise.all([
+      const [svcRes, shopRes, staffRes] = await Promise.all([
         fetch("/api/services").then((r) => r.json()),
         fetch("/api/shop").then((r) => r.json()),
+        fetch("/api/staff").then((r) => r.json()),
       ])
       if (svcRes.data) setServices(svcRes.data)
+      if (staffRes.data) setStaffList(staffRes.data)
       if (shopRes.data) {
         setShop(shopRes.data)
         setShopForm({
@@ -207,6 +214,34 @@ export default function SettingsPage() {
 
   const formatPrice = (cents: number) => `$${(cents / 100).toFixed(0)}`
   const formatDuration = (mins: number) => (mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins} min`)
+
+  async function addStaff(e: React.FormEvent) {
+    e.preventDefault()
+    try {
+      const res = await fetch("/api/staff", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(staffForm),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || "Failed to add staff")
+      setStaffForm({ name: "", role: "groomer", phone: "", email: "" })
+      await fetchData()
+      setStaffDialogOpen(false)
+    } catch (err: unknown) {
+      setSaveMsg({ type: "error", text: err instanceof Error ? err.message : "Failed to add staff" })
+    }
+  }
+
+  async function removeStaff(id: string) {
+    try {
+      const res = await fetch(`/api/staff/${id}`, { method: "DELETE" })
+      if (!res.ok) throw new Error("Failed to remove staff")
+      setStaffList(staffList.filter((s) => s.id !== id))
+    } catch (err: unknown) {
+      setSaveMsg({ type: "error", text: err instanceof Error ? err.message : "Failed to remove staff" })
+    }
+  }
 
   if (loading) {
     return (
@@ -486,6 +521,95 @@ export default function SettingsPage() {
                       <Pencil className="h-3.5 w-3.5" />
                     </Button>
                   </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Staff Management */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100">
+                <Users className="h-4 w-4 text-blue-600" />
+              </div>
+              <div>
+                <CardTitle>Staff</CardTitle>
+                <CardDescription>Manage your grooming team</CardDescription>
+              </div>
+            </div>
+            <Dialog open={staffDialogOpen} onOpenChange={setStaffDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="gradient" size="sm">
+                  <Plus className="mr-1 h-4 w-4" /> Add
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add Staff Member</DialogTitle>
+                  <DialogDescription>Add a groomer or receptionist</DialogDescription>
+                </DialogHeader>
+                <form onSubmit={addStaff} className="space-y-4 pt-2">
+                  <Input
+                    placeholder="Full name"
+                    value={staffForm.name}
+                    onChange={(e) => setStaffForm({ ...staffForm, name: e.target.value })}
+                    required
+                  />
+                  <Select value={staffForm.role} onValueChange={(v) => setStaffForm({ ...staffForm, role: v })}>
+                    <SelectTrigger><SelectValue placeholder="Role" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="groomer">Groomer</SelectItem>
+                      <SelectItem value="bather">Bather</SelectItem>
+                      <SelectItem value="receptionist">Receptionist</SelectItem>
+                      <SelectItem value="manager">Manager</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    placeholder="Phone (optional)"
+                    value={staffForm.phone}
+                    onChange={(e) => setStaffForm({ ...staffForm, phone: e.target.value })}
+                  />
+                  <Input
+                    placeholder="Email (optional)"
+                    value={staffForm.email}
+                    onChange={(e) => setStaffForm({ ...staffForm, email: e.target.value })}
+                  />
+                  <DialogFooter>
+                    <Button type="submit" variant="gradient">Save</Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {staffList.length === 0 ? (
+            <div className="py-8 text-center text-sm text-muted-foreground">
+              No staff yet. Click "Add" to add your first team member.
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {staffList.map((member) => (
+                <div
+                  key={member.id}
+                  className="flex items-center justify-between rounded-xl border bg-card px-4 py-3 transition-shadow hover:shadow-sm"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-blue-100 to-indigo-100">
+                      <Users className="h-4 w-4 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="font-semibold">{member.name}</p>
+                      <p className="text-xs text-muted-foreground capitalize">{member.role}{member.phone ? ` · ${member.phone}` : ""}</p>
+                    </div>
+                  </div>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => removeStaff(member.id)}>
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
               ))}
             </div>

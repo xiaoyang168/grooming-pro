@@ -6,7 +6,14 @@ import { sendReminderEmail } from "@/lib/notifications"
  * Vercel Cron Job: runs daily to send appointment reminders
  * Scheduled in vercel.json
  */
-export async function GET() {
+export async function GET(request: Request) {
+  // Verify CRON_SECRET to prevent unauthorized access
+  const authHeader = request.headers.get("authorization")
+  const cronSecret = process.env.CRON_SECRET
+  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
   try {
     const supabase = await createServiceClient()
 

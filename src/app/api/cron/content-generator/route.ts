@@ -15,6 +15,13 @@ type ContentType = "blog" | "reddit" | "facebook" | "g2"
  * Triggered by vercel.json cron config with ?type=blog|reddit|facebook|g2
  */
 export async function GET(request: NextRequest) {
+  // Verify CRON_SECRET to prevent unauthorized access
+  const authHeader = request.headers.get("authorization")
+  const cronSecret = process.env.CRON_SECRET
+  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
   const { searchParams } = request.nextUrl
   const type = (searchParams.get("type") || "blog") as ContentType
 

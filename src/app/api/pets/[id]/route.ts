@@ -36,3 +36,24 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({ error: e.message }, { status: 500 })
   }
 }
+
+export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params
+    const shopId = await getShopId()
+    if (!shopId) return NextResponse.json({ error: "No shop found" }, { status: 404 })
+
+    const supabase = await createClient()
+    const { error } = await supabase
+      .from("pets")
+      .delete()
+      .eq("id", id)
+      .eq("shop_id", shopId)
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ success: true })
+  } catch (e: any) {
+    if (e.message === "Unauthorized") return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    return NextResponse.json({ error: e.message }, { status: 500 })
+  }
+}

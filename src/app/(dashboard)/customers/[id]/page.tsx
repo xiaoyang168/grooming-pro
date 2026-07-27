@@ -50,10 +50,11 @@ export default function CustomerDetailPage() {
   }
 
   async function addPet() {
-    if (!newPet.name || !newPet.species) return
+    if (!newPet.name || !newPet.species || !customer?.shop_id) return
     const { data, error } = await supabase
       .from("pets")
       .insert({
+        shop_id: customer.shop_id,
         customer_id: id,
         name: newPet.name,
         species: newPet.species,

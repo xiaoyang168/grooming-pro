@@ -45,6 +45,11 @@ export function DashboardClient() {
   useEffect(() => {
     const hour = new Date().getHours()
     setGreeting(hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening")
+    // Restore onboarding dismissed state from localStorage
+    try {
+      const dismissed = localStorage.getItem("onboarding_dismissed") === "true"
+      if (dismissed) setOnboardingDismissed(true)
+    } catch { /* ignore */ }
     fetchData()
     checkNewUser()
   }, [])
@@ -58,7 +63,8 @@ export function DashboardClient() {
         // Check if shop has been set up
         const hasName = !!(json.data.name && json.data.name !== "My Grooming Salon")
         const hasHours = !!json.data.business_hours && Object.keys(json.data.business_hours || {}).length > 0
-        setSetupProgress((p) => ({ ...p, shopInfo: hasName && hasHours }))
+        const hasSlug = !!json.data.slug
+        setSetupProgress((p) => ({ ...p, shopInfo: hasName && hasHours, share: hasSlug }))
       }
 
       const svcRes = await fetch("/api/services")
@@ -167,7 +173,10 @@ export function DashboardClient() {
                 </div>
               </div>
               <button
-                onClick={() => setOnboardingDismissed(true)}
+                onClick={() => {
+                  setOnboardingDismissed(true)
+                  try { localStorage.setItem("onboarding_dismissed", "true") } catch { /* ignore */ }
+                }}
                 className="text-xs text-muted-foreground hover:text-foreground"
               >
                 Dismiss
@@ -186,7 +195,7 @@ export function DashboardClient() {
               {[
                 { key: "shopInfo", step: "1", title: "Set Up Your Shop", desc: "Add name, address, and business hours", href: "/settings" },
                 { key: "services", step: "2", title: "Add Services", desc: "Create grooming services with prices and durations", href: "/settings" },
-                { key: "share", step: "3", title: "Share Booking Link", desc: "Send your online booking page to customers", href: "/settings" },
+                { key: "share", step: "3", title: "Share Booking Link", desc: shopSlug ? `Your link: /booking/${shopSlug}` : "Generate your booking page link", href: "/settings" },
               ].map((item) => {
                 const isComplete = setupProgress[item.key as keyof typeof setupProgress]
                 return (

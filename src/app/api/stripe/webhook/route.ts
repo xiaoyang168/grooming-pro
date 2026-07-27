@@ -57,6 +57,17 @@ export async function POST(request: NextRequest) {
       }
       break
     }
+    case "invoice.payment_failed": {
+      const invoice = event.data.object as any
+      const userId = invoice.metadata?.user_id || invoice.parent?.subscription_details?.metadata?.user_id
+      if (userId) {
+        await supabase
+          .from("shops")
+          .update({ subscription_status: "past_due" })
+          .eq("owner_id", userId)
+      }
+      break
+    }
   }
 
   return NextResponse.json({ received: true })

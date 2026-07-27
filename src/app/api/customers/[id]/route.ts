@@ -13,18 +13,21 @@ async function getShopId() {
   return shop?.id || null
 }
 
-export async function GET() {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const shopId = await getShopId()
     if (!shopId) return NextResponse.json({ error: "No shop found" }, { status: 404 })
 
+    const body = await request.json()
     const supabase = await createClient()
     const { data, error } = await supabase
-      .from("staff")
-      .select("*")
+      .from("customers")
+      .update(body)
+      .eq("id", id)
       .eq("shop_id", shopId)
-      .eq("is_active", true)
-      .order("name")
+      .select()
+      .single()
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ data })
@@ -34,28 +37,21 @@ export async function GET() {
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const shopId = await getShopId()
     if (!shopId) return NextResponse.json({ error: "No shop found" }, { status: 404 })
 
-    const body = await request.json()
     const supabase = await createClient()
-    const { data, error } = await supabase
-      .from("staff")
-      .insert({
-        shop_id: shopId,
-        name: body.name,
-        role: body.role || "groomer",
-        phone: body.phone || null,
-        email: body.email || null,
-        is_active: true,
-      })
-      .select()
-      .single()
+    const { error } = await supabase
+      .from("customers")
+      .delete()
+      .eq("id", id)
+      .eq("shop_id", shopId)
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    return NextResponse.json({ data }, { status: 201 })
+    return NextResponse.json({ success: true })
   } catch (e: any) {
     if (e.message === "Unauthorized") return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     return NextResponse.json({ error: e.message }, { status: 500 })
