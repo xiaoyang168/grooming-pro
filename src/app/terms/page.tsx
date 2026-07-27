@@ -167,7 +167,7 @@ export default function TermsOfServicePage() {
             <p className="text-muted-foreground leading-relaxed">
               For questions about these Terms, contact us at:
               <br />
-              📧 <a href="mailto:support@petsalonos.com" className="text-primary hover:underline">support@petsalonos.com</a>
+              📧 <a href="mailto:1433469126@qq.com" className="text-primary hover:underline">1433469126@qq.com</a>
             </p>
           </section>
         </div>

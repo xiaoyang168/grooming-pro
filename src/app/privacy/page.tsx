@@ -99,7 +99,7 @@ export default function PrivacyPolicyPage() {
               <li><strong>Withdraw Consent:</strong> Withdraw consent for data processing at any time</li>
             </ul>
             <p className="text-muted-foreground leading-relaxed mt-2">
-              To exercise these rights, email us at <a href="mailto:support@petsalonos.com" className="text-primary hover:underline">support@petsalonos.com</a>.
+              To exercise these rights, email us at <a href="mailto:1433469126@qq.com" className="text-primary hover:underline">1433469126@qq.com</a>.
             </p>
           </section>
 
@@ -125,7 +125,7 @@ export default function PrivacyPolicyPage() {
             <p className="text-muted-foreground leading-relaxed">
               For privacy questions or data requests, contact us at:
               <br />
-              📧 <a href="mailto:support@petsalonos.com" className="text-primary hover:underline">support@petsalonos.com</a>
+              📧 <a href="mailto:1433469126@qq.com" className="text-primary hover:underline">1433469126@qq.com</a>
             </p>
           </section>
 

@@ -77,7 +77,7 @@ export default function RefundPolicyPage() {
           <section>
             <h2 className="text-xl font-bold mb-2">4. How to Request a Refund</h2>
             <p className="text-muted-foreground leading-relaxed">
-              To request a refund, email us at <a href="mailto:support@petsalonos.com" className="text-primary hover:underline">support@petsalonos.com</a> with:
+              To request a refund, email us at <a href="mailto:1433469126@qq.com" className="text-primary hover:underline">1433469126@qq.com</a> with:
             </p>
             <ul className="list-disc pl-6 space-y-1 text-muted-foreground">
               <li>Your account email</li>
@@ -94,7 +94,7 @@ export default function RefundPolicyPage() {
             <h2 className="text-xl font-bold mb-2">5. Chargebacks</h2>
             <p className="text-muted-foreground leading-relaxed">
               If you believe a charge is fraudulent or unauthorized, please contact us first at
-              <a href="mailto:support@petsalonos.com" className="text-primary hover:underline"> support@petsalonos.com</a> before
+              <a href="mailto:1433469126@qq.com" className="text-primary hover:underline"> 1433469126@qq.com</a> before
               initiating a chargeback with your bank. We will work to resolve the issue quickly. Unauthorized
               chargebacks may result in account suspension.
             </p>
@@ -114,7 +114,7 @@ export default function RefundPolicyPage() {
             <p className="text-muted-foreground leading-relaxed">
               For refund questions, contact us at:
               <br />
-              📧 <a href="mailto:support@petsalonos.com" className="text-primary hover:underline">support@petsalonos.com</a>
+              📧 <a href="mailto:1433469126@qq.com" className="text-primary hover:underline">1433469126@qq.com</a>
               <br />
               We aim to respond within 1 business day.
             </p>
@@ -123,7 +123,7 @@ export default function RefundPolicyPage() {
           <section className="rounded-xl border border-amber-200 bg-amber-50 p-6 mt-8">
             <p className="text-sm text-amber-800 leading-relaxed">
               <strong>Quick summary:</strong> 14-day free trial, cancel anytime, no prorated partial-month refunds,
-              full refunds for billing errors or trial-period charges. Email support@petsalonos.com for help.
+              full refunds for billing errors or trial-period charges. Email 1433469126@qq.com for help.
             </p>
           </section>
         </div>

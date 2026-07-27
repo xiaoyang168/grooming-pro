@@ -268,8 +268,8 @@ export function LandingPage() {
             </div>
             {[
               { title: "Product", links: [{ label: "Features", href: "#features" }, { label: "Pricing", href: "#pricing" }, { label: "Blog", href: "/blog" }, { label: "Sign In", href: "/login" }] },
-              { title: "Resources", links: [{ label: "Help Center", href: "mailto:support@petsalonos.com" }, { label: "Video Tutorials", href: "#" }, { label: "Blog", href: "/blog" }, { label: "Community", href: "#" }] },
-              { title: "Legal", links: [{ label: "Privacy Policy", href: "/privacy" }, { label: "Terms of Service", href: "/terms" }, { label: "Refund Policy", href: "/refund" }, { label: "Contact", href: "mailto:support@petsalonos.com" }] },
+              { title: "Resources", links: [{ label: "Help Center", href: "mailto:1433469126@qq.com" }, { label: "Video Tutorials", href: "#" }, { label: "Blog", href: "/blog" }, { label: "Community", href: "#" }] },
+              { title: "Legal", links: [{ label: "Privacy Policy", href: "/privacy" }, { label: "Terms of Service", href: "/terms" }, { label: "Refund Policy", href: "/refund" }, { label: "Contact", href: "mailto:1433469126@qq.com" }] },
             ].map((col, i) => (
               <div key={i}>
                 <h4 className="font-semibold text-sm mb-3">{col.title}</h4>
