@@ -71,18 +71,18 @@ export default function SettingsPage() {
   async function handleUpgrade(plan: "pro" | "business") {
     setUpgradeLoading(true)
     try {
-      const res = await fetch("/api/stripe/checkout", {
+      const res = await fetch("/api/creem/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plan }),
       })
       const json = await res.json()
-      if (!res.ok) throw new Error(json.error || "Stripe error")
+      if (!res.ok) throw new Error(json.error || "Checkout failed")
       if (json.url) window.location.href = json.url
     } catch (err: unknown) {
       setSaveMsg({
         type: "error",
-        text: err instanceof Error ? err.message : "Stripe checkout failed — keys may not be configured",
+        text: err instanceof Error ? err.message : "Checkout failed — Creem keys may not be configured",
       })
       setUpgradeLoading(false)
     }
