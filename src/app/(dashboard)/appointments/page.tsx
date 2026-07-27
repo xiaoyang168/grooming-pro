@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Plus, ChevronLeft, ChevronRight, MoreHorizontal, Clock, User, PawPrint, Scissors, Loader2, Camera, ImageIcon, Check, X } from "lucide-react"
+import { formatDateLocal } from "@/lib/format"
 import type { AppointmentWithDetails, Customer, Pet, Staff, Service } from "@/types"
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
@@ -65,7 +66,7 @@ export default function AppointmentsPage() {
 
   const selectedDate = new Date()
   selectedDate.setDate(selectedDate.getDate() + offset)
-  const dateStr = selectedDate.toISOString().slice(0, 10)
+  const dateStr = formatDateLocal(selectedDate)
   const displayDate = selectedDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })
 
   async function fetchData() {
