@@ -70,6 +70,7 @@ export async function POST(request: NextRequest) {
       .from("services")
       .select("name, duration_minutes, price")
       .eq("id", service_id)
+      .eq("shop_id", shop_id)
       .single()
 
     if (!service) return NextResponse.json({ error: "Service not found" }, { status: 404 })

@@ -39,10 +39,16 @@ export async function PATCH(request: NextRequest) {
     if (!shopId) return NextResponse.json({ error: "No shop found" }, { status: 404 })
 
     const body = await request.json()
+    // Whitelist allowed fields to prevent subscription_tier bypass
+    const ALLOWED = ["name", "phone", "email", "address", "business_hours", "slug"]
+    const updateData: Record<string, unknown> = {}
+    for (const key of ALLOWED) {
+      if (key in body) updateData[key] = body[key]
+    }
     const supabase = await createClient()
     const { data, error } = await supabase
       .from("shops")
-      .update(body)
+      .update(updateData)
       .eq("id", shopId)
       .select()
       .single()

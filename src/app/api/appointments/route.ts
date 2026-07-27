@@ -67,9 +67,31 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Verify customer and pet belong to this shop (prevent cross-shop reference)
+    const [{ data: customer }, { data: pet }] = await Promise.all([
+      supabase.from("customers").select("id").eq("id", body.customer_id).eq("shop_id", shopId).single(),
+      supabase.from("pets").select("id").eq("id", body.pet_id).eq("shop_id", shopId).single(),
+    ])
+    if (!customer || !pet) {
+      return NextResponse.json({ error: "Customer or pet not found in this shop" }, { status: 404 })
+    }
+
+    // Whitelist fields to prevent mass assignment
     const { data, error } = await supabase
       .from("appointments")
-      .insert({ ...body, shop_id: shopId })
+      .insert({
+        shop_id: shopId,
+        customer_id: body.customer_id,
+        pet_id: body.pet_id,
+        service_ids: body.service_ids,
+        staff_id: body.staff_id || null,
+        start_time: body.start_time,
+        end_time: body.end_time || null,
+        status: body.status || "pending",
+        price: body.price || 0,
+        is_paid: false,
+        notes: body.notes || null,
+      })
       .select()
       .single()
 
@@ -79,8 +101,8 @@ export async function POST(request: NextRequest) {
     try {
       const { customer_id, pet_id } = body
       const [{ data: customer }, { data: pet }, { data: shop }] = await Promise.all([
-        supabase.from("customers").select("name, email").eq("id", customer_id).single(),
-        supabase.from("pets").select("name").eq("id", pet_id).single(),
+        supabase.from("customers").select("name, email").eq("id", body.customer_id).eq("shop_id", shopId).single(),
+        supabase.from("pets").select("name").eq("id", body.pet_id).eq("shop_id", shopId).single(),
         supabase.from("shops").select("name").eq("id", shopId).single(),
       ])
 

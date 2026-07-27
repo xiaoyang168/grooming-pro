@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
+import { createServiceClient } from "@/lib/supabase/server"
 import { getPlanFromProduct } from "@/lib/creem"
 import * as crypto from "crypto"
 
@@ -11,23 +11,30 @@ import * as crypto from "crypto"
 export async function POST(request: NextRequest) {
   const rawBody = await request.text()
   const signature = request.headers.get("creem-signature") || ""
-  const secret = process.env.CREEM_WEBHOOK_SECRET || ""
+  const secret = process.env.CREEM_WEBHOOK_SECRET
 
-  // Verify webhook signature
-  if (secret) {
-    const computedSignature = crypto
-      .createHmac("sha256", secret)
-      .update(rawBody)
-      .digest("hex")
+  // Force secret verification — reject if not configured
+  if (!secret) {
+    console.error("Creem webhook: CREEM_WEBHOOK_SECRET not configured")
+    return NextResponse.json({ error: "Webhook secret not configured" }, { status: 500 })
+  }
 
-    if (computedSignature !== signature) {
-      console.error("Creem webhook: invalid signature")
-      return NextResponse.json({ error: "Invalid signature" }, { status: 401 })
-    }
+  // Verify webhook signature (timing-safe comparison)
+  const computedSignature = crypto
+    .createHmac("sha256", secret)
+    .update(rawBody)
+    .digest("hex")
+
+  const signatureBuffer = Buffer.from(signature)
+  const computedBuffer = Buffer.from(computedSignature)
+  if (signatureBuffer.length !== computedBuffer.length || !crypto.timingSafeEqual(signatureBuffer, computedBuffer)) {
+    console.error("Creem webhook: invalid signature")
+    return NextResponse.json({ error: "Invalid signature" }, { status: 401 })
   }
 
   const event = JSON.parse(rawBody)
-  const supabase = await createClient()
+  // Use service client — webhook has no user session, needs to bypass RLS
+  const supabase = await createServiceClient()
 
   switch (event.eventType) {
     case "checkout.completed":

@@ -15,10 +15,10 @@ type ContentType = "blog" | "reddit" | "facebook" | "g2"
  * Triggered by vercel.json cron config with ?type=blog|reddit|facebook|g2
  */
 export async function GET(request: NextRequest) {
-  // Verify CRON_SECRET to prevent unauthorized access
+  // Force CRON_SECRET verification — reject if not configured
   const authHeader = request.headers.get("authorization")
   const cronSecret = process.env.CRON_SECRET
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
