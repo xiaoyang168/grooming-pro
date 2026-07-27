@@ -87,19 +87,13 @@ export default function LoginPage() {
       router.refresh()
     } catch (err: unknown) {
       if (err instanceof TypeError && err.message.includes("fetch")) {
-        setError("Network error — cannot reach Supabase. Check your internet connection or try demo mode.")
+        setError("Network error — cannot reach Supabase. Check your internet connection.")
       } else {
         setError(err instanceof Error ? err.message : "Something went wrong")
       }
     } finally {
       setLoading(false)
     }
-  }
-
-  async function handleDemoLogin() {
-    document.cookie = "grooming_demo=true; path=/; max-age=86400"
-    router.push("/")
-    router.refresh()
   }
 
   async function handleSignOut() {
@@ -206,20 +200,6 @@ export default function LoginPage() {
               </Button>
             </form>
           )}
-
-          <div className="mt-4 rounded-lg border border-dashed border-border bg-muted/30 p-3">
-            <p className="text-xs text-muted-foreground text-center mb-2">
-              Supabase not configured? Preview the dashboard without signing in.
-            </p>
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              onClick={handleDemoLogin}
-            >
-              Preview Dashboard (Demo)
-            </Button>
-          </div>
 
           <p className="mt-5 text-center text-sm text-muted-foreground">
             {mode === "login" ? "Don't have an account?" : "Already have an account?"}{" "}

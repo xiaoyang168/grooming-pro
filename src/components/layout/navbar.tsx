@@ -105,7 +105,6 @@ export function Navbar() {
 
   async function handleSignOut() {
     await supabase.auth.signOut()
-    document.cookie = "grooming_demo=; path=/; max-age=0"
     router.push("/login")
     router.refresh()
   }
