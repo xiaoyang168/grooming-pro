@@ -654,8 +654,8 @@ export default function SettingsPage() {
             </div>
             {shop?.subscription_status === "active" ? (
               <Button variant="outline" asChild>
-                <a href={`https://dashboard.stripe.com/${process.env.NEXT_PUBLIC_APP_URL?.includes("localhost") ? "test/" : ""}subscriptions`} target="_blank" rel="noopener">
-                  Manage in Stripe
+                <a href="https://app.creem.io/customer-portal" target="_blank" rel="noopener">
+                  Manage in Creem
                 </a>
               </Button>
             ) : (

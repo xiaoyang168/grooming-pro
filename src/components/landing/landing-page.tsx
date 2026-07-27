@@ -36,7 +36,7 @@ const features = [
   },
   {
     icon: CreditCard, title: "Online Payments",
-    desc: "Stripe-integrated deposits and full payments at booking. Reduce no-shows and keep cash flow healthy.",
+    desc: "Secure card payments at booking. Reduce no-shows and keep cash flow healthy.",
     color: "text-cyan-500", bg: "bg-cyan-50",
   },
 ]
@@ -52,7 +52,7 @@ const pricingPlans = [
     name: "Professional", price: "$59", period: "/month",
     desc: "For growing salons",
     features: ["Unlimited staff", "AI smart scheduling", "AI churn alerts", "SMS + email notifications", "AI analytics dashboard",
-      "Stripe online payments", "30-day data history", "Priority support"],
+      "Secure online payments", "30-day data history", "Priority support"],
     cta: "Start Free Trial", popular: true,
   },
   {
