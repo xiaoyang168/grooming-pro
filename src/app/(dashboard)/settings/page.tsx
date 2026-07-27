@@ -55,6 +55,7 @@ export default function SettingsPage() {
   const [qrDataUrl, setQrDataUrl] = useState("")
   const [copied, setCopied] = useState(false)
   const [serviceSubmitting, setServiceSubmitting] = useState(false)
+  const [portalLoading, setPortalLoading] = useState(false)
   const [serviceForm, setServiceForm] = useState({
     name: "",
     category: "bath",
@@ -85,6 +86,22 @@ export default function SettingsPage() {
         text: err instanceof Error ? err.message : "Checkout failed — Creem keys may not be configured",
       })
       setUpgradeLoading(false)
+    }
+  }
+
+  async function handleManageSubscription() {
+    setPortalLoading(true)
+    try {
+      const res = await fetch("/api/creem/portal", { method: "POST" })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || "Failed to open portal")
+      if (json.url) window.location.href = json.url
+    } catch (err: unknown) {
+      setSaveMsg({
+        type: "error",
+        text: err instanceof Error ? err.message : "Failed to open Creem portal",
+      })
+      setPortalLoading(false)
     }
   }
 
@@ -653,10 +670,8 @@ export default function SettingsPage() {
               </p>
             </div>
             {shop?.subscription_status === "active" ? (
-              <Button variant="outline" asChild>
-                <a href="https://app.creem.io/customer-portal" target="_blank" rel="noopener">
-                  Manage in Creem
-                </a>
+              <Button variant="outline" onClick={handleManageSubscription} disabled={portalLoading}>
+                {portalLoading ? "Opening..." : "Manage in Creem"}
               </Button>
             ) : (
               <Button variant="gradient" onClick={() => handleUpgrade("pro")} disabled={upgradeLoading}>
