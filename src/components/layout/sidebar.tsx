@@ -5,7 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import {
-  LayoutDashboard, CalendarDays, Users, PawPrint, BarChart3, Settings, Sparkles, Megaphone,
+  LayoutDashboard, CalendarDays, Users, PawPrint, BarChart3, Settings, Sparkles, Megaphone, Package, Gift,
 } from "lucide-react"
 
 const navigation = [
@@ -13,6 +13,8 @@ const navigation = [
   { name: "Appointments", href: "/appointments", icon: CalendarDays },
   { name: "Customers", href: "/customers", icon: Users },
   { name: "Pets", href: "/pets", icon: PawPrint },
+  { name: "Inventory", href: "/inventory", icon: Package },
+  { name: "Loyalty", href: "/loyalty", icon: Gift },
   { name: "Reports", href: "/reports", icon: BarChart3 },
   { name: "Marketing", href: "/marketing", icon: Megaphone, badge: "AI" },
   { name: "Settings", href: "/settings", icon: Settings },
