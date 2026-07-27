@@ -156,10 +156,9 @@ export function LandingPage() {
       {/* ═══ Trust ═══ */}
       <section className="border-y bg-muted/20 py-10">
         <div className="mx-auto max-w-5xl px-4 sm:px-6">
-          <p className="text-center text-sm text-muted-foreground mb-6">Trusted by 500+ grooming salons worldwide</p>
-          <div className="flex flex-wrap items-center justify-center gap-8 opacity-40">
-            {["🐕 Paws & Claws", "🐱 Purrfect Groom", "🐶 Doggy Style", "🦴 Happy Tails", "🐾 Fluffy Friends"].map((n, i) => (<span key={i} className="text-sm font-semibold">{n}</span>))}
-          </div>
+          <p className="text-center text-sm text-muted-foreground">
+            Designed for independent pet grooming salons, mobile groomers, and multi-location businesses
+          </p>
         </div>
       </section>
 
@@ -249,7 +248,7 @@ export function LandingPage() {
         <div className="mx-auto max-w-3xl px-4 sm:px-6 text-center">
           <div className="rounded-2xl bg-gradient-to-br from-primary to-orange-600 p-10 sm:p-14 shadow-xl shadow-primary/25">
             <h2 className="text-3xl font-bold text-white sm:text-4xl">Ready to run your salon smarter?</h2>
-            <p className="mt-4 text-primary-foreground/80 max-w-lg mx-auto">Join 500+ grooming salons using AI to free up time for what matters.</p>
+            <p className="mt-4 text-primary-foreground/80 max-w-lg mx-auto">Start your 14-day free trial — no credit card required. Let AI handle the busywork so you can focus on the pets.</p>
             <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4">
               <Link href="/login?signup=true"><Button size="xl" className="bg-white text-primary hover:bg-white/90 shadow-lg">Start Free Trial</Button></Link>
             </div>
