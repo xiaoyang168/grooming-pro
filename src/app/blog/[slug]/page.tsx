@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import type { Metadata } from "next"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Calendar, Clock, ArrowLeft, PawPrint } from "lucide-react"
@@ -16,6 +17,38 @@ async function getBlogPost(slug: string) {
     .eq("status", "published")
     .single()
   return data
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params
+  const post = await getBlogPost(slug)
+  if (!post) {
+    return { title: "Post Not Found | GroomingPro" }
+  }
+
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.petsalonos.com"
+  const url = `${baseUrl}/blog/${post.slug}`
+
+  return {
+    title: `${post.title} | GroomingPro Blog`,
+    description: post.meta_description || post.excerpt,
+    keywords: post.keywords || [],
+    alternates: { canonical: url },
+    openGraph: {
+      title: post.title,
+      description: post.excerpt,
+      url,
+      siteName: "GroomingPro",
+      type: "article",
+      publishedTime: post.published_at,
+      tags: post.keywords || [],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: post.title,
+      description: post.excerpt,
+    },
+  }
 }
 
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -134,15 +167,4 @@ function renderMarkdown(md: string): string {
   }).join("\n")
 
   return html
-}
-
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params
-  const post = await getBlogPost(slug)
-  if (!post) return { title: "Post not found" }
-  return {
-    title: `${post.title} | GroomingPro Blog`,
-    description: post.meta_description || post.excerpt,
-    keywords: post.keywords?.join(", "),
-  }
 }
