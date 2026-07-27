@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
+import { createServiceClient } from "@/lib/supabase/server"
 import {
   generateBlogPost,
   generateRedditPost,
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
   const type = (searchParams.get("type") || "blog") as ContentType
 
   try {
-    const supabase = await createClient()
+    const supabase = await createServiceClient()
 
     switch (type) {
       case "blog": {
