@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Search, Plus, PawPrint, Cake, AlertTriangle, Heart, Edit, Loader2 } from "lucide-react"
+import { Search, Plus, PawPrint, Cake, AlertTriangle, Heart, Edit, Trash2, Loader2 } from "lucide-react"
 import type { Pet, Customer } from "@/types"
 
 interface PetWithOwner extends Pet {
@@ -147,6 +147,17 @@ export default function PetsPage() {
       })
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  async function handleDeletePet(petId: string) {
+    if (!confirm("Delete this pet? This cannot be undone.")) return
+    try {
+      const res = await fetch(`/api/pets/${petId}`, { method: "DELETE" })
+      if (!res.ok) throw new Error("Failed to delete pet")
+      setPets(pets.filter((p) => p.id !== petId))
+    } catch {
+      // ignore
     }
   }
 
@@ -350,9 +361,14 @@ export default function PetsPage() {
                       <p className="text-xs text-muted-foreground">Owner: {pet.customer?.name || "—"}</p>
                     </div>
                   </div>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(pet)}>
-                    <Edit className="h-4 w-4" />
-                  </Button>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(pet)}>
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => handleDeletePet(pet.id)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
 
                 <div className="flex flex-wrap gap-1.5 mb-3">

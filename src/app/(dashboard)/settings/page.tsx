@@ -69,6 +69,10 @@ export default function SettingsPage() {
   const [staffDialogOpen, setStaffDialogOpen] = useState(false)
   const [staffForm, setStaffForm] = useState({ name: "", role: "groomer", phone: "", email: "" })
 
+  // Service edit state
+  const [editServiceOpen, setEditServiceOpen] = useState(false)
+  const [editServiceForm, setEditServiceForm] = useState({ id: "", name: "", duration_minutes: "", price: "", description: "" })
+
   async function handleUpgrade(plan: "pro" | "business") {
     setUpgradeLoading(true)
     try {
@@ -258,6 +262,45 @@ export default function SettingsPage() {
     } catch (err: unknown) {
       setSaveMsg({ type: "error", text: err instanceof Error ? err.message : "Failed to remove staff" })
     }
+  }
+
+  function openEditService(svc: Service) {
+    setEditServiceForm({
+      id: svc.id,
+      name: svc.name,
+      duration_minutes: String(svc.duration_minutes),
+      price: String(svc.price / 100),
+      description: svc.description || "",
+    })
+    setEditServiceOpen(true)
+  }
+
+  async function handleEditService(e: React.FormEvent) {
+    e.preventDefault()
+    try {
+      const res = await fetch(`/api/services/${editServiceForm.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: editServiceForm.name,
+          duration_minutes: parseInt(editServiceForm.duration_minutes, 10),
+          price: Math.round(parseFloat(editServiceForm.price) * 100),
+          description: editServiceForm.description || null,
+        }),
+      })
+      if (!res.ok) throw new Error("Failed to update service")
+      await fetchData()
+      setEditServiceOpen(false)
+    } catch { /* ignore */ }
+  }
+
+  async function handleDeleteService(id: string) {
+    if (!confirm("Delete this service? Existing appointments will keep the record.")) return
+    try {
+      const res = await fetch(`/api/services/${id}`, { method: "DELETE" })
+      if (!res.ok) throw new Error("Failed to delete service")
+      setServices(services.filter((s) => s.id !== id))
+    } catch { /* ignore */ }
   }
 
   if (loading) {
@@ -534,8 +577,11 @@ export default function SettingsPage() {
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-lg font-bold text-primary">{formatPrice(svc.price)}</span>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditService(svc)}>
                       <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => handleDeleteService(svc.id)}>
+                      <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
                 </div>
@@ -544,6 +590,40 @@ export default function SettingsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Edit Service Dialog */}
+      <Dialog open={editServiceOpen} onOpenChange={setEditServiceOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Service</DialogTitle>
+            <DialogDescription>Update service details below.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleEditService} className="space-y-4 py-2">
+            <div>
+              <label className="text-sm font-semibold">Name *</label>
+              <Input value={editServiceForm.name} onChange={(e) => setEditServiceForm({ ...editServiceForm, name: e.target.value })} required className="mt-1.5" />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="text-sm font-semibold">Duration (minutes)</label>
+                <Input type="number" value={editServiceForm.duration_minutes} onChange={(e) => setEditServiceForm({ ...editServiceForm, duration_minutes: e.target.value })} className="mt-1.5" />
+              </div>
+              <div>
+                <label className="text-sm font-semibold">Price ($)</label>
+                <Input type="number" step="0.01" value={editServiceForm.price} onChange={(e) => setEditServiceForm({ ...editServiceForm, price: e.target.value })} className="mt-1.5" />
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-semibold">Description</label>
+              <Input value={editServiceForm.description} onChange={(e) => setEditServiceForm({ ...editServiceForm, description: e.target.value })} className="mt-1.5" />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setEditServiceOpen(false)}>Cancel</Button>
+              <Button type="submit" variant="gradient">Save Changes</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* Staff Management */}
       <Card>
