@@ -44,8 +44,22 @@ export async function POST(
       return NextResponse.json({ error: "Type must be 'before' or 'after'" }, { status: 400 })
     }
 
-    // Upload to Supabase Storage
-    const ext = file.name.split(".").pop() || "jpg"
+    // Validate file type (must be image)
+    if (!file.type.startsWith("image/")) {
+      return NextResponse.json({ error: "File must be an image" }, { status: 400 })
+    }
+
+    // Validate file size (max 5MB)
+    const MAX_SIZE = 5 * 1024 * 1024
+    if (file.size > MAX_SIZE) {
+      return NextResponse.json({ error: "File size must be under 5MB" }, { status: 400 })
+    }
+
+    // Upload to Supabase Storage — use safe extension based on MIME type
+    const extMap: Record<string, string> = {
+      "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/gif": "gif",
+    }
+    const ext = extMap[file.type] || "jpg"
     const filePath = `${shop.id}/${id}/${photoType}.${ext}`
 
     const { error: uploadError } = await supabase.storage

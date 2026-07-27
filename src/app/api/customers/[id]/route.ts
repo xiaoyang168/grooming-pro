@@ -20,20 +20,23 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (!shopId) return NextResponse.json({ error: "No shop found" }, { status: 404 })
 
     const body = await request.json()
+    const ALLOWED = ["name", "email", "phone", "notes", "tags"]
+    const updateData: Record<string, unknown> = {}
+    for (const key of ALLOWED) { if (key in body) updateData[key] = body[key] }
     const supabase = await createClient()
     const { data, error } = await supabase
       .from("customers")
-      .update(body)
+      .update(updateData)
       .eq("id", id)
       .eq("shop_id", shopId)
       .select()
       .single()
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return NextResponse.json({ error: "Update failed" }, { status: 500 })
     return NextResponse.json({ data })
   } catch (e: any) {
     if (e.message === "Unauthorized") return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    return NextResponse.json({ error: e.message }, { status: 500 })
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
 
@@ -50,10 +53,10 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
       .eq("id", id)
       .eq("shop_id", shopId)
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return NextResponse.json({ error: "Delete failed" }, { status: 500 })
     return NextResponse.json({ success: true })
   } catch (e: any) {
     if (e.message === "Unauthorized") return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    return NextResponse.json({ error: e.message }, { status: 500 })
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
