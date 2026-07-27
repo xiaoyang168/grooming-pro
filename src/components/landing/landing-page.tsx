@@ -267,16 +267,20 @@ export function LandingPage() {
               <p className="text-sm text-muted-foreground">AI-powered pet grooming management software</p>
             </div>
             {[
-              { title: "Product", links: ["Features", "Pricing", "Changelog", "API"] },
-              { title: "Resources", links: ["Help Center", "Video Tutorials", "Blog", "Community"] },
-              { title: "Company", links: ["About Us", "Contact", "Privacy Policy", "Terms of Service"] },
+              { title: "Product", links: [{ label: "Features", href: "#features" }, { label: "Pricing", href: "#pricing" }, { label: "Blog", href: "/blog" }, { label: "Sign In", href: "/login" }] },
+              { title: "Resources", links: [{ label: "Help Center", href: "mailto:support@petsalonos.com" }, { label: "Video Tutorials", href: "#" }, { label: "Blog", href: "/blog" }, { label: "Community", href: "#" }] },
+              { title: "Legal", links: [{ label: "Privacy Policy", href: "/privacy" }, { label: "Terms of Service", href: "/terms" }, { label: "Refund Policy", href: "/refund" }, { label: "Contact", href: "mailto:support@petsalonos.com" }] },
             ].map((col, i) => (
               <div key={i}>
                 <h4 className="font-semibold text-sm mb-3">{col.title}</h4>
                 <ul className="space-y-2">
                   {col.links.map((l, j) => (
                     <li key={j}>
-                      <span className="text-sm text-muted-foreground cursor-default">{l}</span>
+                      {l.href.startsWith("http") || l.href.startsWith("mailto:") ? (
+                        <a href={l.href} className="text-sm text-muted-foreground hover:text-primary transition-colors">{l.label}</a>
+                      ) : (
+                        <Link href={l.href} className="text-sm text-muted-foreground hover:text-primary transition-colors">{l.label}</Link>
+                      )}
                     </li>
                   ))}
                 </ul>
