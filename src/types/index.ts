@@ -84,6 +84,18 @@ export interface Pet {
   created_at: string
 }
 
+// ── Vaccination ──────────────────────────────────────────────
+export interface Vaccination {
+  id: string
+  pet_id: string
+  shop_id: string
+  vaccine_name: string
+  administered_date: string
+  expires_at: string | null
+  notes: string | null
+  created_at: string
+}
+
 // ── Service ───────────────────────────────────────────────────
 export interface Service {
   id: string
@@ -119,6 +131,7 @@ export interface Appointment {
   status: AppointmentStatus
   notes: string
   price: number
+  tip_amount: number
   is_paid: boolean
   created_by: 'shop' | 'customer'
   created_at: string

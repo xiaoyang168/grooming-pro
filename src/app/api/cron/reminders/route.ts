@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { createServiceClient } from "@/lib/supabase/server"
-import { sendReminderEmail } from "@/lib/notifications"
+import { sendReminderEmail, sendReminderSMS } from "@/lib/notifications"
 
 /**
  * Vercel Cron Job: runs daily to send appointment reminders
@@ -46,35 +46,53 @@ export async function GET(request: Request) {
       return NextResponse.json({ sent: 0, message: "No upcoming appointments to remind" })
     }
 
-    // Get shop names
+    // Get shop names + phones
     const shopIds = [...new Set(appointments.map((a: any) => a.shop_id))]
     const { data: shops } = await supabase
       .from("shops")
-      .select("id, name")
+      .select("id, name, phone")
       .in("id", shopIds)
 
-    const shopMap = new Map<string, string>()
-    shops?.forEach((s: any) => shopMap.set(s.id, s.name))
+    const shopMap = new Map<string, { name: string; phone: string | null }>()
+    shops?.forEach((s: any) => shopMap.set(s.id, { name: s.name, phone: s.phone }))
 
-    // Send reminders
+    // Send reminders (email + SMS)
     let sent = 0
     for (const a of appointments) {
       const customer = a.customer as any
       const pet = a.pet as any
+      const shopInfo = shopMap.get(a.shop_id) || { name: "GroomingPro", phone: null }
 
-      if (!customer || !customer.email) continue
+      let emailOk = false
+      let smsOk = false
 
-      const success = await sendReminderEmail({
-        customerName: customer.name,
-        customerEmail: customer.email,
-        petName: pet?.name || "your pet",
-        serviceName: a.notes || "grooming",
-        startTime: a.start_time,
-        shopName: shopMap.get(a.shop_id) || "GroomingPro",
-      })
+      // Email reminder
+      if (customer?.email) {
+        emailOk = await sendReminderEmail({
+          customerName: customer.name,
+          customerEmail: customer.email,
+          petName: pet?.name || "your pet",
+          serviceName: a.notes || "grooming",
+          startTime: a.start_time,
+          shopName: shopInfo.name,
+        })
+      }
 
-      if (success) {
-        // Mark as reminded
+      // SMS reminder
+      if (customer?.phone) {
+        smsOk = await sendReminderSMS({
+          customerName: customer.name,
+          customerPhone: customer.phone,
+          petName: pet?.name || "your pet",
+          serviceName: a.notes || "grooming",
+          startTime: a.start_time,
+          shopName: shopInfo.name,
+          shopPhone: shopInfo.phone,
+        })
+      }
+
+      // Mark as reminded if at least one channel succeeded (or customer has neither)
+      if (emailOk || smsOk || (!customer?.email && !customer?.phone)) {
         await supabase
           .from("appointments")
           .update({ reminder_sent_at: new Date().toISOString() })

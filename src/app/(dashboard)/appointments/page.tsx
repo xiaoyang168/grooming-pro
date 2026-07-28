@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -21,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
-import { Plus, ChevronLeft, ChevronRight, MoreHorizontal, Clock, User, PawPrint, Scissors, Loader2, Camera, ImageIcon, Check, X } from "lucide-react"
+import { Plus, ChevronLeft, ChevronRight, MoreHorizontal, Clock, User, PawPrint, Scissors, Loader2, Camera, ImageIcon, Check, X, DollarSign, FileText } from "lucide-react"
 import { formatDateLocal } from "@/lib/format"
 import type { AppointmentWithDetails, Customer, Pet, Staff, Service } from "@/types"
 
@@ -38,6 +39,7 @@ const statusMap: Record<string, { label: string; variant: "success" | "default" 
 }
 
 export default function AppointmentsPage() {
+  const router = useRouter()
   const [appointments, setAppointments] = useState<AppointmentWithDetails[]>([])
   const [loading, setLoading] = useState(true)
   const [offset, setOffset] = useState(0)
@@ -53,6 +55,13 @@ export default function AppointmentsPage() {
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null)
   const [uploadingPhoto, setUploadingPhoto] = useState<string | null>(null) // appointment id
   const [statusMenuId, setStatusMenuId] = useState<string | null>(null) // open status dropdown for appointment id
+
+  // Tip management state
+  const [tipDialogOpen, setTipDialogOpen] = useState(false)
+  const [completingApptId, setCompletingApptId] = useState<string | null>(null)
+  const [completingApptPrice, setCompletingApptPrice] = useState(0) // service price in cents
+  const [tipAmount, setTipAmount] = useState(0) // tip in cents
+  const [tipCustom, setTipCustom] = useState("") // custom tip input in dollars
 
   const [form, setForm] = useState({
     customer_id: "",
@@ -201,6 +210,16 @@ export default function AppointmentsPage() {
 
   async function handleStatusChange(apptId: string, newStatus: string) {
     setStatusMenuId(null)
+    // When completing, open tip dialog first
+    if (newStatus === "completed") {
+      const appt = appointments.find((a) => a.id === apptId)
+      setCompletingApptId(apptId)
+      setCompletingApptPrice(appt?.price || 0)
+      setTipAmount(0)
+      setTipCustom("")
+      setTipDialogOpen(true)
+      return
+    }
     try {
       await fetch(`/api/appointments/${apptId}`, {
         method: "PATCH",
@@ -211,6 +230,34 @@ export default function AppointmentsPage() {
     } catch (err) {
       console.error("Status update failed:", err)
     }
+  }
+
+  async function completeWithTip() {
+    if (!completingApptId) return
+    try {
+      await fetch(`/api/appointments/${completingApptId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "completed", tip_amount: tipAmount }),
+      })
+      setTipDialogOpen(false)
+      setCompletingApptId(null)
+      await fetchData()
+    } catch (err) {
+      console.error("Complete with tip failed:", err)
+    }
+  }
+
+  // Quick tip buttons: calculate tip from service price
+  function setTipPercent(percent: number) {
+    setTipAmount(Math.round(completingApptPrice * percent / 100))
+    setTipCustom("")
+  }
+
+  function setTipCustomAmount(dollars: string) {
+    setTipCustom(dollars)
+    const cents = Math.round(parseFloat(dollars) * 100)
+    setTipAmount(isNaN(cents) ? 0 : cents)
   }
 
   // Build 7-day calendar strip
@@ -268,6 +315,9 @@ export default function AppointmentsPage() {
                     ))}
                   </SelectContent>
                 </Select>
+                {form.customer_id && customerPets.length === 0 && (
+                  <p className="text-xs text-red-600 mt-1.5">This customer has no pets. Add a pet in the Pets page first.</p>
+                )}
               </div>
               <div>
                 <label className="text-sm font-semibold">Service *</label>
@@ -420,6 +470,12 @@ export default function AppointmentsPage() {
                               <Scissors className="h-3 w-3" />
                               {apt.price ? `$${(apt.price / 100).toFixed(0)}` : "—"}
                             </span>
+                            {apt.tip_amount > 0 && (
+                              <span className="flex items-center gap-1 text-emerald-600 font-medium">
+                                <DollarSign className="h-3 w-3" />
+                                +${(apt.tip_amount / 100).toFixed(0)} tip
+                              </span>
+                            )}
                             <span className="flex items-center gap-1">
                               <User className="h-3 w-3" />
                               {apt.customer?.name}
@@ -445,6 +501,14 @@ export default function AppointmentsPage() {
                         </Button>
                         {statusMenuId === apt.id && (
                           <div className="absolute right-0 top-full mt-1 w-36 rounded-lg border bg-white shadow-lg z-10 py-1 status-dropdown">
+                            {apt.status === "completed" && (
+                              <button
+                                className="flex items-center gap-2 w-full px-3 py-2 text-xs text-left hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                                onClick={() => { setStatusMenuId(null); router.push(`/invoices/${apt.id}`) }}
+                              >
+                                <FileText className="h-3 w-3" /> View Invoice
+                              </button>
+                            )}
                             {apt.status !== "completed" && (
                               <button
                                 className="flex items-center gap-2 w-full px-3 py-2 text-xs text-left hover:bg-emerald-50 hover:text-emerald-700 transition-colors"
@@ -544,6 +608,61 @@ export default function AppointmentsPage() {
           })
         )}
       </div>
+
+      {/* Tip Dialog — opens when marking appointment as completed */}
+      <Dialog open={tipDialogOpen} onOpenChange={setTipDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Complete Appointment</DialogTitle>
+            <DialogDescription>Add a tip for the groomer (optional).</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="text-sm text-muted-foreground">
+              Service: <span className="font-semibold text-foreground">${(completingApptPrice / 100).toFixed(0)}</span>
+            </div>
+            <div className="grid grid-cols-4 gap-2">
+              <Button variant="outline" size="sm" onClick={() => { setTipAmount(0); setTipCustom("") }}>
+                No tip
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setTipPercent(10)}>
+                10%
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setTipPercent(15)}>
+                15%
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setTipPercent(20)}>
+                20%
+              </Button>
+            </div>
+            <div>
+              <label className="text-sm font-semibold">Custom tip ($)</label>
+              <Input
+                type="number"
+                step="0.01"
+                value={tipCustom}
+                onChange={(e) => setTipCustomAmount(e.target.value)}
+                placeholder="0.00"
+                className="mt-1.5"
+              />
+            </div>
+            <div className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2">
+              <span className="text-sm text-muted-foreground">Total (service + tip)</span>
+              <span className="font-bold text-lg">
+                ${((completingApptPrice + tipAmount) / 100).toFixed(2)}
+              </span>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => { setTipDialogOpen(false); setCompletingApptId(null) }}>
+              Cancel
+            </Button>
+            <Button type="button" variant="gradient" onClick={completeWithTip}>
+              <Check className="h-4 w-4 mr-1.5" />
+              Complete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

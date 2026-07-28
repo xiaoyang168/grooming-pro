@@ -22,7 +22,8 @@
     "react-dom": "19.2.4",
     "recharts": "^3.9.2",
     "resend": "^6.17.2",
-    "stripe": "^22.3.0"
+    "stripe": "^22.3.0",
+    "twilio": "^6.0.2"
   },
   "devDependencies": {
     "@radix-ui/react-avatar": "^1.2.2",

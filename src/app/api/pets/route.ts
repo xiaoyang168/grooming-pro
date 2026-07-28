@@ -51,9 +51,26 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createClient()
     const body = await request.json()
+
+    // Server-side validation: prevent empty UUID strings
+    const name = typeof body.name === "string" ? body.name.trim() : ""
+    const customerId = typeof body.customer_id === "string" ? body.customer_id.trim() : ""
+    if (!name) return NextResponse.json({ error: "Pet name is required" }, { status: 400 })
+    if (!customerId) return NextResponse.json({ error: "Owner is required" }, { status: 400 })
+
     const { data, error } = await supabase
       .from("pets")
-      .insert({ ...body, shop_id: shopId })
+      .insert({
+        shop_id: shopId,
+        customer_id: customerId,
+        name,
+        species: body.species || "dog",
+        breed: body.breed || null,
+        gender: body.gender || "male",
+        age_years: typeof body.age_years === "number" ? body.age_years : null,
+        weight_kg: typeof body.weight_kg === "number" ? body.weight_kg : null,
+        color: body.color || null,
+      })
       .select()
       .single()
 

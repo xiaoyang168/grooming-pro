@@ -21,8 +21,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Search, Plus, PawPrint, Cake, AlertTriangle, Heart, Edit, Trash2, Loader2 } from "lucide-react"
-import type { Pet, Customer } from "@/types"
+import { Search, Plus, PawPrint, Cake, AlertTriangle, Heart, Edit, Trash2, Loader2, Syringe, ShieldCheck, Calendar, X } from "lucide-react"
+import type { Pet, Customer, Vaccination } from "@/types"
 
 interface PetWithOwner extends Pet {
   customer?: { id: string; name: string }
@@ -52,6 +52,15 @@ export default function PetsPage() {
   const [submitting, setSubmitting] = useState(false)
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null)
   const [form, setForm] = useState(emptyForm)
+
+  // Vaccination state
+  const [vaxDialogOpen, setVaxDialogOpen] = useState(false)
+  const [vaxPetId, setVaxPetId] = useState<string | null>(null)
+  const [vaxPetName, setVaxPetName] = useState("")
+  const [vaccinations, setVaccinations] = useState<Vaccination[]>([])
+  const [vaxLoading, setVaxLoading] = useState(false)
+  const [vaxForm, setVaxForm] = useState({ vaccine_name: "", administered_date: "", expires_at: "", notes: "" })
+  const [vaxSubmitting, setVaxSubmitting] = useState(false)
 
   async function fetchPets() {
     try {
@@ -118,22 +127,33 @@ export default function PetsPage() {
     _open: boolean,
     close: (v: boolean) => void
   ) {
+    // Client-side validation: prevent empty customer_id from reaching the API
+    if (!form.name.trim()) {
+      setFeedback({ type: "error", message: "Pet name is required" })
+      return
+    }
+    if (method === "POST" && !form.customer_id) {
+      setFeedback({ type: "error", message: "Please select an owner" })
+      return
+    }
     setSubmitting(true)
     setFeedback(null)
     try {
+      const payload: Record<string, unknown> = {
+        name: form.name.trim(),
+        species: form.species,
+        breed: form.breed || null,
+        gender: form.gender,
+        age_years: form.age_years ? parseFloat(form.age_years) : null,
+        weight_kg: form.weight_kg ? parseFloat(form.weight_kg) : null,
+        color: form.color || null,
+      }
+      // Only include customer_id when present (avoid sending empty string for PATCH)
+      if (form.customer_id) payload.customer_id = form.customer_id
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: form.name,
-          customer_id: form.customer_id,
-          species: form.species,
-          breed: form.breed || null,
-          gender: form.gender,
-          age_years: form.age_years ? parseFloat(form.age_years) : null,
-          weight_kg: form.weight_kg ? parseFloat(form.weight_kg) : null,
-          color: form.color || null,
-        }),
+        body: JSON.stringify(payload),
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error || "Failed to save pet")
@@ -159,6 +179,71 @@ export default function PetsPage() {
     } catch {
       // ignore
     }
+  }
+
+  // ── Vaccination helpers ──────────────────────────────────────
+  async function openVaccinations(pet: PetWithOwner) {
+    setVaxPetId(pet.id)
+    setVaxPetName(pet.name)
+    setVaxDialogOpen(true)
+    setVaxLoading(true)
+    setVaxForm({ vaccine_name: "", administered_date: "", expires_at: "", notes: "" })
+    try {
+      const res = await fetch(`/api/pets/${pet.id}/vaccinations`)
+      const data = await res.json()
+      if (data.data) setVaccinations(data.data)
+    } catch {
+      setVaccinations([])
+    } finally {
+      setVaxLoading(false)
+    }
+  }
+
+  async function addVaccination(e: React.FormEvent) {
+    e.preventDefault()
+    if (!vaxPetId) return
+    if (!vaxForm.vaccine_name.trim() || !vaxForm.administered_date) return
+    setVaxSubmitting(true)
+    try {
+      const res = await fetch(`/api/pets/${vaxPetId}/vaccinations`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          vaccine_name: vaxForm.vaccine_name.trim(),
+          administered_date: vaxForm.administered_date,
+          expires_at: vaxForm.expires_at || null,
+          notes: vaxForm.notes || null,
+        }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || "Failed to add")
+      setVaccinations([json.data, ...vaccinations])
+      setVaxForm({ vaccine_name: "", administered_date: "", expires_at: "", notes: "" })
+    } catch {
+      // ignore
+    } finally {
+      setVaxSubmitting(false)
+    }
+  }
+
+  async function deleteVaccination(vid: string) {
+    if (!vaxPetId) return
+    try {
+      await fetch(`/api/pets/${vaxPetId}/vaccinations?vid=${vid}`, { method: "DELETE" })
+      setVaccinations(vaccinations.filter((v) => v.id !== vid))
+    } catch {
+      // ignore
+    }
+  }
+
+  function getVaxStatus(v: Vaccination): "valid" | "expiring" | "expired" | "no_expiry" {
+    if (!v.expires_at) return "no_expiry"
+    const now = new Date()
+    const expiry = new Date(v.expires_at)
+    const daysLeft = Math.floor((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+    if (daysLeft < 0) return "expired"
+    if (daysLeft <= 30) return "expiring"
+    return "valid"
   }
 
   const filtered = pets.filter(
@@ -362,6 +447,9 @@ export default function PetsPage() {
                     </div>
                   </div>
                   <div className="flex gap-1">
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openVaccinations(pet)} title="Vaccination records">
+                      <Syringe className="h-4 w-4" />
+                    </Button>
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(pet)}>
                       <Edit className="h-4 w-4" />
                     </Button>
@@ -414,6 +502,116 @@ export default function PetsPage() {
           ))}
         </div>
       )}
+
+      {/* Vaccination Dialog */}
+      <Dialog open={vaxDialogOpen} onOpenChange={setVaxDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Syringe className="h-4 w-4 text-primary" />
+              {vaxPetName}'s Vaccinations
+            </DialogTitle>
+            <DialogDescription>Track vaccine records and expiry dates.</DialogDescription>
+          </DialogHeader>
+
+          {/* Add form */}
+          <form onSubmit={addVaccination} className="space-y-3 border-b pb-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-semibold">Vaccine name *</label>
+                <Input
+                  value={vaxForm.vaccine_name}
+                  onChange={(e) => setVaxForm({ ...vaxForm, vaccine_name: e.target.value })}
+                  placeholder="Rabies, DHPP..."
+                  required
+                  className="mt-1 h-9 text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold">Administered *</label>
+                <Input
+                  type="date"
+                  value={vaxForm.administered_date}
+                  onChange={(e) => setVaxForm({ ...vaxForm, administered_date: e.target.value })}
+                  required
+                  className="mt-1 h-9 text-sm"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-semibold">Expires (optional)</label>
+                <Input
+                  type="date"
+                  value={vaxForm.expires_at}
+                  onChange={(e) => setVaxForm({ ...vaxForm, expires_at: e.target.value })}
+                  className="mt-1 h-9 text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold">Notes</label>
+                <Input
+                  value={vaxForm.notes}
+                  onChange={(e) => setVaxForm({ ...vaxForm, notes: e.target.value })}
+                  placeholder="Batch #, vet..."
+                  className="mt-1 h-9 text-sm"
+                />
+              </div>
+            </div>
+            <Button type="submit" variant="gradient" size="sm" disabled={vaxSubmitting}>
+              {vaxSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4 mr-1" />}
+              Add Record
+            </Button>
+          </form>
+
+          {/* Records list */}
+          <div className="space-y-2 max-h-64 overflow-y-auto">
+            {vaxLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : vaccinations.length === 0 ? (
+              <div className="text-center py-8 text-sm text-muted-foreground">
+                <ShieldCheck className="h-8 w-8 mx-auto mb-2 opacity-20" />
+                No vaccination records yet
+              </div>
+            ) : (
+              vaccinations.map((v) => {
+                const status = getVaxStatus(v)
+                return (
+                  <div key={v.id} className="flex items-center justify-between rounded-lg border px-3 py-2">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="font-semibold text-sm">{v.vaccine_name}</p>
+                        <Badge
+                          variant={status === "expired" ? "destructive" : status === "expiring" ? "warning" : "secondary"}
+                          className="text-[10px]"
+                        >
+                          {status === "expired" ? "Expired" : status === "expiring" ? "Expiring" : status === "valid" ? "Valid" : "No expiry"}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        <Calendar className="h-3 w-3 inline mr-1" />
+                        {v.administered_date}
+                        {v.expires_at && ` → expires ${v.expires_at}`}
+                        {v.notes ? ` · ${v.notes}` : ""}
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                      onClick={() => deleteVaccination(v.id)}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                )
+              })
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
