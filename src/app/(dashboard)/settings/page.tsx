@@ -82,6 +82,8 @@ export default function SettingsPage() {
         body: JSON.stringify({ plan }),
       })
       const json = await res.json()
+      // Debug: log checkout response to see what productId is being used
+      console.log("[upgrade] plan:", plan, "| response:", json)
       if (!res.ok) throw new Error(json.error || "Checkout failed")
       if (json.url) window.location.href = json.url
     } catch (err: unknown) {

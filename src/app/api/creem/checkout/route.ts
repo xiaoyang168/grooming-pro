@@ -24,6 +24,9 @@ export async function POST(request: NextRequest) {
     const productId = getProductForPlan(plan)
     const origin = process.env.NEXT_PUBLIC_APP_URL || "https://www.petsalonos.com"
 
+    // Debug log — remove after testing
+    console.log("[checkout] plan:", plan, "| productId:", productId, "| env PRO:", process.env.CREEM_PRO_PRODUCT_ID, "| env BIZ:", process.env.CREEM_BUSINESS_PRODUCT_ID)
+
     // Create Creem checkout session
     const checkout = await creem.checkouts.create({
       productId,
@@ -35,10 +38,10 @@ export async function POST(request: NextRequest) {
     })
 
     if (!checkout.checkoutUrl) {
-      return NextResponse.json({ error: "Failed to create checkout" }, { status: 500 })
+      return NextResponse.json({ error: "Failed to create checkout", debug: { plan, productId, checkoutUrl: checkout.checkoutUrl } }, { status: 500 })
     }
 
-    return NextResponse.json({ url: checkout.checkoutUrl })
+    return NextResponse.json({ url: checkout.checkoutUrl, debug: { plan, productId } })
   } catch (err: any) {
     console.error("Creem checkout error:", err)
     return NextResponse.json(
