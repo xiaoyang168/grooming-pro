@@ -50,8 +50,8 @@ export default function TermsOfServicePage() {
             <h3 className="font-semibold mt-3 mb-1">3.1 Plans</h3>
             <ul className="list-disc pl-6 space-y-1 text-muted-foreground">
               <li><strong>Starter ($29/month):</strong> Up to 2 staff, online booking, basic CRM, email notifications, 7-day data history.</li>
-              <li><strong>Professional ($59/month):</strong> Unlimited staff, AI scheduling, AI churn alerts, AI analytics, online payments, 30-day history, priority support.</li>
-              <li><strong>Enterprise ($99/month):</strong> All Pro features + multi-location, custom branding, API access, unlimited history, dedicated account manager.</li>
+              <li><strong>Professional ($29/month):</strong> Unlimited staff, AI scheduling, AI churn alerts, AI analytics, online payments, 30-day history, priority support.</li>
+              <li><strong>Enterprise ($59/month):</strong> All Pro features + multi-location, custom branding, API access, unlimited history, dedicated account manager.</li>
             </ul>
             <h3 className="font-semibold mt-3 mb-1">3.2 Free Trial</h3>
             <p className="text-muted-foreground leading-relaxed">

@@ -49,14 +49,14 @@ const pricingPlans = [
     cta: "Start Free Trial", popular: false,
   },
   {
-    name: "Professional", price: "$59", period: "/month",
+    name: "Professional", price: "$29", period: "/month",
     desc: "For growing salons",
     features: ["Unlimited staff", "AI smart scheduling", "AI churn alerts", "SMS + email notifications", "AI analytics dashboard",
       "Secure online payments", "30-day data history", "Priority support"],
     cta: "Start Free Trial", popular: true,
   },
   {
-    name: "Enterprise", price: "$99", period: "/month",
+    name: "Enterprise", price: "$59", period: "/month",
     desc: "For multi-location chains",
     features: ["All Pro features", "Multi-location management", "Custom branding", "API access", "Unlimited data history",
       "Dedicated account manager", "Custom reporting"],
