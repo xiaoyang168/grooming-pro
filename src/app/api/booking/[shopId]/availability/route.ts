@@ -18,7 +18,7 @@ export async function GET(
     return NextResponse.json({ error: "Missing date" }, { status: 400 })
   }
 
-  const supabase = await createServiceClient()
+  const supabase = createServiceClient()
 
   // Verify shop exists (try id first, then slug — booking page may pass either)
   let shop: { id: string } | null = null

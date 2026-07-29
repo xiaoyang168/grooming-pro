@@ -23,7 +23,7 @@ export async function POST(
 
     // Use service client for all write operations (bypasses RLS which has
     // been failing for these updates even when the user is the rightful owner)
-    const adminSupabase = await createServiceClient()
+    const adminSupabase = createServiceClient()
 
     // Verify appointment belongs to this shop
     const { data: appt } = await adminSupabase

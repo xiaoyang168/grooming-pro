@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Use service client — booking page has no user session
-    const supabase = await createServiceClient()
+    const supabase = createServiceClient()
 
     // Verify appointment exists and get shop slug for redirect
     const { data: apt, error: aptError } = await supabase
