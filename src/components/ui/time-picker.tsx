@@ -1,9 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { Clock, X } from "lucide-react"
+import { Clock } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select"
@@ -20,8 +19,8 @@ interface TimePickerProps {
 }
 
 /**
- * Inline time picker — HH + MM selects shown directly, no popovers, no nesting.
- * Avoids all Radix interactions so it's 100% reliable.
+ * Compact time picker — looks like a single input field.
+ * HH and MM selects are inline, sized like input boxes.
  */
 export function TimePicker({
   value,
@@ -46,64 +45,55 @@ export function TimePicker({
   function setMinute(min: string) {
     onChange(hh ? `${hh}:${min}` : `00:${min}`)
   }
-  function clear() {
-    onChange("")
-  }
-
-  const formatted = (() => {
-    if (!value || !m) return null
-    const h = parseInt(hh, 10)
-    const ampm = h < 12 ? "AM" : "PM"
-    const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h
-    return `${h12}:${mm} ${ampm}`
-  })()
 
   return (
     <div
       className={cn(
-        "w-full rounded-xl border bg-background px-3 py-2 space-y-1.5",
+        "flex items-center gap-2 h-10 w-full rounded-xl border bg-background px-3 text-sm transition-colors",
+        "focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary",
         disabled && "opacity-50 pointer-events-none",
         className
       )}
     >
-      <div className="flex items-center gap-2 text-sm">
-        <Clock className="h-4 w-4 opacity-70 shrink-0" />
-        <span className={cn("font-medium tabular-nums", !formatted && "text-muted-foreground")}>
-          {formatted ?? "Pick a time"}
-        </span>
-        {formatted && (
-          <button
-            type="button"
-            onClick={clear}
-            className="ml-auto h-6 w-6 rounded-full flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground"
-            aria-label="Clear time"
-          >
-            <X className="h-3 w-3" />
-          </button>
-        )}
-      </div>
-      <div className="flex items-center gap-2">
-        <Select value={hh} onValueChange={setHour}>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Hour" />
-          </SelectTrigger>
-          <SelectContent className="max-h-[240px]">
-            {hours.map((h) => (
-              <SelectItem key={h} value={h}>{h}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <span className="text-muted-foreground">:</span>
-        <Select value={mm} onValueChange={setMinute}>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Min" />
-          </SelectTrigger>
-          <SelectContent className="max-h-[240px]">
-            {minutes.map((min) => (
-              <SelectItem key={min} value={min}>{min}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <Clock className="h-4 w-4 opacity-60 shrink-0" />
+
+      {/* Compact HH select styled like a number input */}
+      <Select value={hh} onValueChange={setHour} disabled={disabled}>
+        <SelectTrigger
+          className="h-7 w-14 border-0 bg-muted/60 px-0 justify-center font-medium tabular-nums hover:bg-muted focus:ring-0 focus:ring-offset-0"
+        >
+          <SelectValue placeholder="HH" />
+        </SelectTrigger>
+        <SelectContent className="max-h-[260px]">
+          {hours.map((h) => (
+            <SelectItem key={h} value={h} className="font-medium">{h}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      <span className="text-muted-foreground font-bold">:</span>
+
+      {/* Compact MM select styled like a number input */}
+      <Select value={mm} onValueChange={setMinute} disabled={disabled}>
+        <SelectTrigger
+          className="h-7 w-14 border-0 bg-muted/60 px-0 justify-center font-medium tabular-nums hover:bg-muted focus:ring-0 focus:ring-offset-0"
+        >
+          <SelectValue placeholder="MM" />
+        </SelectTrigger>
+        <SelectContent className="max-h-[260px]">
+          {minutes.map((min) => (
+            <SelectItem key={min} value={min} className="font-medium">{min}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      {/* AM/PM indicator (only when value set) */}
+      <div className="ml-auto h-7 px-2 inline-flex items-center rounded-md bg-primary/10 text-primary text-xs font-bold">
+        {(() => {
+          if (!hh) return "—"
+          const h = parseInt(hh, 10)
+          return h < 12 ? "AM" : "PM"
+        })()}
       </div>
     </div>
   )
