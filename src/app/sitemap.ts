@@ -19,22 +19,28 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Dynamic blog posts
   try {
     const supabase = createServiceClient()
-    const { data: posts } = await supabase
+    const { data: posts, error } = await supabase
       .from("blog_posts")
-      .select("slug, published_at, updated_at")
+      .select("slug, published_at")
       .eq("status", "published")
       .order("published_at", { ascending: false })
       .limit(200)
 
+    if (error) {
+      console.error("[sitemap] blog_posts query failed:", error.message)
+      return staticPages
+    }
+
     const blogPages: MetadataRoute.Sitemap = (posts || []).map((post) => ({
       url: `${baseUrl}/blog/${post.slug}`,
-      lastModified: new Date(post.updated_at || post.published_at),
+      lastModified: new Date(post.published_at),
       changeFrequency: "monthly" as const,
       priority: 0.7,
     }))
 
     return [...staticPages, ...blogPages]
-  } catch {
+  } catch (err) {
+    console.error("[sitemap] unexpected error:", err)
     return staticPages
   }
 }
