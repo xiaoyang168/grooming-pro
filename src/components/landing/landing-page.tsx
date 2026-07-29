@@ -189,10 +189,7 @@ export function LandingPage() {
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {features.map((f, i) => (
-              <div key={i} className="group rounded-2xl border bg-card p-6 card-hover relative">
-                {"badge" in f && f.badge && (
-                  <span className="absolute top-4 right-4 rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-bold text-amber-700">{f.badge}</span>
-                )}
+              <div key={i} className="group rounded-2xl border bg-card p-6 card-hover">
                 <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${f.bg} mb-4 group-hover:scale-110 transition-transform`}>
                   <f.icon className={`h-6 w-6 ${f.color}`} />
                 </div>
