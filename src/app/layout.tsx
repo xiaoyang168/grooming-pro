@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
+import { Analytics } from "@/components/analytics/Analytics"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -63,7 +64,10 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="GroomingPro" />
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <Analytics />
+        {children}
+      </body>
     </html>
   )
 }
