@@ -98,10 +98,10 @@ export function DashboardClient() {
     `$${(cents / 100).toLocaleString()}`
 
   const statCards = [
-    { label: "Today's Appointments", value: String(stats.todayAppointments ?? 0), icon: CalendarCheck, color: "text-primary", bg: "bg-primary/10" },
-    { label: "Monthly Revenue", value: formatCurrency(stats.monthlyRevenue ?? 0), icon: TrendingUp, color: "text-emerald-500", bg: "bg-emerald-50" },
-    { label: "Active Customers", value: String(stats.activeCustomers ?? 0), icon: Users, color: "text-blue-500", bg: "bg-blue-50" },
-    { label: "Pets", value: String(stats.totalPets ?? 0), icon: PawPrint, color: "text-violet-500", bg: "bg-violet-50" },
+    { label: "Today's Appointments", value: String(stats.todayAppointments ?? 0), icon: CalendarCheck, color: "text-primary", bg: "bg-primary/10", gradient: "from-primary/5 to-primary/0", trend: `${stats.weekTotalAppts ?? 0} this week`, trendUp: true },
+    { label: "Monthly Revenue", value: formatCurrency(stats.monthlyRevenue ?? 0), icon: TrendingUp, color: "text-emerald-500", bg: "bg-emerald-50", gradient: "from-emerald-50/50 to-emerald-0", trend: "Live tracking", trendUp: true },
+    { label: "Active Customers", value: String(stats.activeCustomers ?? 0), icon: Users, color: "text-blue-500", bg: "bg-blue-50", gradient: "from-blue-50/50 to-blue-0", trend: `+${stats.weekNewCustomers ?? 0} this week`, trendUp: true },
+    { label: "Pets", value: String(stats.totalPets ?? 0), icon: PawPrint, color: "text-violet-500", bg: "bg-violet-50", gradient: "from-violet-50/50 to-violet-0", trend: "In your care", trendUp: null },
   ]
 
   const aiInsights = [
@@ -222,16 +222,21 @@ export function DashboardClient() {
       {/* Stat Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {statCards.map((stat, i) => (
-          <Card key={i} className="card-hover overflow-hidden">
-            <CardContent className="p-5">
+          <Card key={i} className={`card-hover overflow-hidden bg-gradient-to-br ${stat.gradient}`}>
+            <CardContent className="p-5 relative">
               <div className="flex items-start justify-between">
-                <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${stat.bg}`}>
+                <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${stat.bg} shadow-sm`}>
                   <stat.icon className={`h-5 w-5 ${stat.color}`} />
                 </div>
+                {stat.trendUp !== null && (
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${stat.trendUp ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}>
+                    {stat.trendUp ? "↑" : "↓"} {stat.trend}
+                  </span>
+                )}
               </div>
               <div className="mt-4">
-                <p className="text-2xl font-bold">{stat.value}</p>
-                <p className="text-sm text-muted-foreground mt-0.5">{stat.label}</p>
+                <p className="text-3xl font-extrabold tracking-tight tabular-nums">{stat.value}</p>
+                <p className="text-sm text-muted-foreground mt-1">{stat.label}</p>
               </div>
             </CardContent>
           </Card>
@@ -254,34 +259,32 @@ export function DashboardClient() {
                 <p className="text-sm">No appointments today</p>
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="relative space-y-2 before:absolute before:left-[51px] before:top-2 before:bottom-2 before:w-px before:bg-border">
                 {appointments.slice(0, 6).map((apt) => {
                   const status = statusMap[apt.status] || { label: apt.status, variant: "secondary" as const }
                   const startTime = new Date(apt.start_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                  const isDone = ["completed", "canceled", "no_show"].includes(apt.status)
+                  const dotColor = isDone ? "bg-muted-foreground/30" : apt.status === "in_progress" ? "bg-emerald-500" : apt.status === "checked_in" ? "bg-blue-500" : "bg-primary"
                   return (
-                    <div key={apt.id} className="flex items-center justify-between rounded-xl border bg-card px-4 py-3 hover:bg-muted/30 transition-colors group">
-                      <div className="flex items-center gap-4">
-                        <span className="font-mono text-sm text-muted-foreground w-14">{startTime}</span>
-                        <div className="flex items-center gap-2">
-                          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-sm font-bold text-primary">
-                            {apt.pet?.name?.[0] || "?"}
-                          </div>
-                          <div>
-                            <p className="text-sm font-semibold">
-                              {apt.pet?.name || "Unknown"}{" "}
-                              <span className="text-xs text-muted-foreground font-normal">{apt.pet?.breed}</span>
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {apt.customer?.name}{apt.staff?.name ? ` · ${apt.staff.name}` : ""}
-                            </p>
-                          </div>
+                    <div key={apt.id} className="relative flex items-center justify-between rounded-xl border bg-card pl-16 pr-4 py-3 hover:border-primary/30 hover:shadow-sm transition-all group">
+                      <span className="absolute left-0 top-1/2 -translate-y-1/2 text-xs font-bold tabular-nums text-muted-foreground w-12 text-right pr-3">{startTime}</span>
+                      <span className={`absolute left-[48px] top-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full ring-4 ring-background ${dotColor}`} />
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 text-sm font-bold text-primary shrink-0">
+                          {apt.pet?.name?.[0] || "?"}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold truncate">
+                            {apt.pet?.name || "Unknown"}{" "}
+                            <span className="text-xs text-muted-foreground font-normal">{apt.pet?.breed}</span>
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {apt.customer?.name}{apt.staff?.name ? ` · ${apt.staff.name}` : ""}
+                          </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 shrink-0">
                         <Badge variant={status.variant} className="text-xs">{status.label}</Badge>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <MoreHorizontal className="h-3.5 w-3.5" />
-                        </Button>
                       </div>
                     </div>
                   )
