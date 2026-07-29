@@ -207,11 +207,13 @@ export default function AppointmentsPage() {
       if (!res.ok) throw new Error(json.error || "Upload failed")
 
       // 局部更新 — 只改那一个 appointment 的 photo URL，不刷新整个列表
+      // 加时间戳参数强制浏览器重新请求（避免缓存显示旧图片）
       const url = json.data?.url
       if (url) {
+        const cacheBustUrl = `${url}?t=${Date.now()}`
         setAppointments(prev => prev.map(a =>
           a.id === apptId
-            ? { ...a, [`photo_${photoType}_url`]: url }
+            ? { ...a, [`photo_${photoType}_url`]: cacheBustUrl }
             : a
         ))
       }
