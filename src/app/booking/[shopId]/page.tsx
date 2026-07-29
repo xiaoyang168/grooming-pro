@@ -43,6 +43,7 @@ export default function BookingPage({ params }: { params: Promise<{ shopId: stri
   const [selectedService, setSelectedService] = useState(0)
   const [selectedDate, setSelectedDate] = useState("")
   const [selectedTime, setSelectedTime] = useState<string | null>(null)
+  const [takenSlots, setTakenSlots] = useState<string[]>([])
   const [notes, setNotes] = useState("")
   const [fieldErrors, setFieldErrors] = useState<Record<string, boolean>>({})
   const [showShare, setShowShare] = useState(false)
@@ -66,6 +67,19 @@ export default function BookingPage({ params }: { params: Promise<{ shopId: stri
     const today = new Date()
     setSelectedDate(today.toISOString().slice(0, 10))
   }, [])
+
+  // Fetch taken time slots whenever selected date or shop changes
+  useEffect(() => {
+    if (!selectedDate || !shopId) return
+    let cancelled = false
+    fetch(`/api/booking/${shopId}/availability?date=${selectedDate}`)
+      .then((r) => r.json())
+      .then((res) => {
+        if (!cancelled && res.taken) setTakenSlots(res.taken)
+      })
+      .catch(() => { /* ignore */ })
+    return () => { cancelled = true }
+  }, [selectedDate, shopId])
 
   // Check if returning from Creem payment
   useEffect(() => {
@@ -383,18 +397,27 @@ export default function BookingPage({ params }: { params: Promise<{ shopId: stri
               placeholder="Pick a date"
             />
             <div className="mt-3 grid grid-cols-3 gap-2">
-              {timeSlots.map((time) => (
-                <button
-                  key={time}
-                  type="button"
-                  className={`rounded-xl border-2 py-3 text-sm font-semibold transition-all ${
-                    selectedTime === time ? "border-primary bg-primary text-white shadow-md" : "border-border hover:border-primary/50 hover:text-primary"
-                  }`}
-                  onClick={() => setSelectedTime(time)}
-                >
-                  {time}
-                </button>
-              ))}
+              {timeSlots.map((time) => {
+                const taken = takenSlots.includes(time)
+                return (
+                  <button
+                    key={time}
+                    type="button"
+                    disabled={taken}
+                    className={`rounded-xl border-2 py-3 text-sm font-semibold transition-all ${
+                      taken
+                        ? "border-border bg-muted text-muted-foreground cursor-not-allowed line-through"
+                        : selectedTime === time
+                          ? "border-primary bg-primary text-white shadow-md"
+                          : "border-border hover:border-primary/50 hover:text-primary"
+                    }`}
+                    onClick={() => !taken && setSelectedTime(time)}
+                  >
+                    {time}
+                    {taken && <span className="block text-[10px] font-normal">Booked</span>}
+                  </button>
+                )
+              })}
             </div>
             <p className="mt-2 text-xs text-muted-foreground flex items-center gap-1">
               <Sparkles className="h-3 w-3 text-primary" />
