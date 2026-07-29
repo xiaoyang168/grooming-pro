@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
-import { Plus, ChevronLeft, ChevronRight, MoreHorizontal, Clock, User, PawPrint, Scissors, Loader2, Camera, ImageIcon, Check, X, DollarSign, FileText, Maximize2 } from "lucide-react"
+import { Plus, ChevronLeft, ChevronRight, MoreHorizontal, Clock, User, PawPrint, Scissors, Loader2, Camera, ImageIcon, Check, X, DollarSign, FileText, Maximize2, RefreshCw } from "lucide-react"
 import { DatePicker } from "@/components/ui/date-picker"
 import { TimePicker } from "@/components/ui/time-picker"
 import { formatDateLocal } from "@/lib/format"
@@ -205,7 +205,16 @@ export default function AppointmentsPage() {
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error || "Upload failed")
-      await fetchData() // refresh to show new photo
+
+      // 局部更新 — 只改那一个 appointment 的 photo URL，不刷新整个列表
+      const url = json.data?.url
+      if (url) {
+        setAppointments(prev => prev.map(a =>
+          a.id === apptId
+            ? { ...a, [`photo_${photoType}_url`]: url }
+            : a
+        ))
+      }
     } catch (err: unknown) {
       console.error("Photo upload failed:", err)
     } finally {
@@ -544,19 +553,33 @@ export default function AppointmentsPage() {
                   {/* Photo section */}
                   {(apt.photo_before_url || apt.photo_after_url || apt.status !== "canceled") && (
                     <div className="mt-3 flex items-center gap-3 border-t pt-3">
-                      {/* Before Photo — click to enlarge / drag to upload */}
+                      {/* Before Photo — click to enlarge / drag to upload / replace */}
                       <div className="flex items-center gap-2">
                         {apt.photo_before_url ? (
-                          <button
-                            type="button"
-                            onClick={() => setLightbox({ url: apt.photo_before_url!, label: "Before" })}
-                            className="relative group cursor-zoom-in"
-                          >
-                            <img src={apt.photo_before_url} alt="Before" className="h-14 w-14 rounded-xl object-cover border-2 hover:border-primary transition-all group-hover:scale-105" />
-                            <div className="absolute inset-0 rounded-xl bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                              <Maximize2 className="h-4 w-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                            </div>
-                          </button>
+                          <div className="relative group">
+                            <button
+                              type="button"
+                              onClick={() => setLightbox({ url: apt.photo_before_url!, label: "Before" })}
+                              className="relative cursor-zoom-in"
+                            >
+                              <img src={apt.photo_before_url} alt="Before" className="h-14 w-14 rounded-xl object-cover border-2 hover:border-primary transition-all" />
+                              <div className="absolute inset-0 rounded-xl bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                                <Maximize2 className="h-4 w-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                              </div>
+                            </button>
+                            {/* Replace button */}
+                            <label className="absolute -top-1.5 -right-1.5 h-6 w-6 rounded-full bg-primary text-white flex items-center justify-center cursor-pointer shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110" title="Replace photo">
+                              <RefreshCw className="h-3 w-3" />
+                              <input
+                                type="file" accept="image/*" className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0]
+                                  if (file) { handlePhotoUpload(apt.id, "before", file); e.target.value = "" }
+                                }}
+                                disabled={uploadingPhoto?.apptId === apt.id}
+                              />
+                            </label>
+                          </div>
                         ) : (
                           <label
                             className={`relative group cursor-pointer rounded-xl transition-all ${dragOver === `${apt.id}-before` ? "scale-105" : ""}`}
@@ -588,19 +611,33 @@ export default function AppointmentsPage() {
                         <span className="text-[10px] text-muted-foreground whitespace-nowrap">Before</span>
                       </div>
 
-                      {/* After Photo — click to enlarge / drag to upload */}
+                      {/* After Photo — click to enlarge / drag to upload / replace */}
                       <div className="flex items-center gap-2">
                         {apt.photo_after_url ? (
-                          <button
-                            type="button"
-                            onClick={() => setLightbox({ url: apt.photo_after_url!, label: "After" })}
-                            className="relative group cursor-zoom-in"
-                          >
-                            <img src={apt.photo_after_url} alt="After" className="h-14 w-14 rounded-xl object-cover border-2 hover:border-primary transition-all group-hover:scale-105" />
-                            <div className="absolute inset-0 rounded-xl bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                              <Maximize2 className="h-4 w-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                            </div>
-                          </button>
+                          <div className="relative group">
+                            <button
+                              type="button"
+                              onClick={() => setLightbox({ url: apt.photo_after_url!, label: "After" })}
+                              className="relative cursor-zoom-in"
+                            >
+                              <img src={apt.photo_after_url} alt="After" className="h-14 w-14 rounded-xl object-cover border-2 hover:border-primary transition-all" />
+                              <div className="absolute inset-0 rounded-xl bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                                <Maximize2 className="h-4 w-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                              </div>
+                            </button>
+                            {/* Replace button */}
+                            <label className="absolute -top-1.5 -right-1.5 h-6 w-6 rounded-full bg-primary text-white flex items-center justify-center cursor-pointer shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110" title="Replace photo">
+                              <RefreshCw className="h-3 w-3" />
+                              <input
+                                type="file" accept="image/*" className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0]
+                                  if (file) { handlePhotoUpload(apt.id, "after", file); e.target.value = "" }
+                                }}
+                                disabled={uploadingPhoto?.apptId === apt.id}
+                              />
+                            </label>
+                          </div>
                         ) : (
                           <label
                             className={`relative group cursor-pointer rounded-xl transition-all ${dragOver === `${apt.id}-after` ? "scale-105" : ""}`}
