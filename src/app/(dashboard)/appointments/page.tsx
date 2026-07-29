@@ -55,8 +55,9 @@ export default function AppointmentsPage() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null)
-  const [uploadingPhoto, setUploadingPhoto] = useState<string | null>(null) // appointment id
-  const [statusMenuId, setStatusMenuId] = useState<string | null>(null) // open status dropdown for appointment id
+  // Photo upload state — track (appointmentId, type) independently for before/after
+  const [uploadingPhoto, setUploadingPhoto] = useState<{ apptId: string; type: "before" | "after" } | null>(null)
+  const [statusMenuId, setStatusMenuId] = useState<string | null>(null)
 
   // Tip management state
   const [tipDialogOpen, setTipDialogOpen] = useState(false)
@@ -188,7 +189,7 @@ export default function AppointmentsPage() {
   }
 
   async function handlePhotoUpload(apptId: string, photoType: "before" | "after", file: File) {
-    setUploadingPhoto(apptId)
+    setUploadingPhoto({ apptId, type: photoType })
     try {
       const formData = new FormData()
       formData.append("file", file)
@@ -198,10 +199,8 @@ export default function AppointmentsPage() {
         method: "POST",
         body: formData,
       })
-      if (!res.ok) {
-        const json = await res.json()
-        throw new Error(json.error || "Upload failed")
-      }
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || "Upload failed")
       await fetchData() // refresh to show new photo
     } catch (err: unknown) {
       console.error("Photo upload failed:", err)
@@ -552,7 +551,7 @@ export default function AppointmentsPage() {
                             />
                           ) : (
                             <div className="flex h-12 w-12 items-center justify-center rounded-lg border-2 border-dashed bg-muted/30 text-muted-foreground group-hover:border-primary/50 transition-colors">
-                              {uploadingPhoto === apt.id ? (
+                              {uploadingPhoto?.apptId === apt.id && uploadingPhoto?.type === "before" ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
                               ) : (
                                 <Camera className="h-4 w-4" />
@@ -568,9 +567,12 @@ export default function AppointmentsPage() {
                             className="hidden"
                             onChange={(e) => {
                               const file = e.target.files?.[0]
-                              if (file) handlePhotoUpload(apt.id, "before", file)
+                              if (file) {
+                                handlePhotoUpload(apt.id, "before", file)
+                                e.target.value = "" // reset so same file can be picked again
+                              }
                             }}
-                            disabled={uploadingPhoto === apt.id}
+                            disabled={uploadingPhoto?.apptId === apt.id}
                           />
                         </label>
                       </div>
@@ -586,7 +588,7 @@ export default function AppointmentsPage() {
                             />
                           ) : (
                             <div className="flex h-12 w-12 items-center justify-center rounded-lg border-2 border-dashed bg-muted/30 text-muted-foreground group-hover:border-primary/50 transition-colors">
-                              {uploadingPhoto === apt.id ? (
+                              {uploadingPhoto?.apptId === apt.id && uploadingPhoto?.type === "after" ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
                               ) : (
                                 <ImageIcon className="h-4 w-4" />
@@ -602,9 +604,12 @@ export default function AppointmentsPage() {
                             className="hidden"
                             onChange={(e) => {
                               const file = e.target.files?.[0]
-                              if (file) handlePhotoUpload(apt.id, "after", file)
+                              if (file) {
+                                handlePhotoUpload(apt.id, "after", file)
+                                e.target.value = "" // reset so same file can be picked again
+                              }
                             }}
-                            disabled={uploadingPhoto === apt.id}
+                            disabled={uploadingPhoto?.apptId === apt.id}
                           />
                         </label>
                       </div>
