@@ -3,6 +3,7 @@
 import { useState, useEffect, use, useRef } from "react"
 import { PawPrint, Clock, Scissors, Sparkles, Loader2, CheckCircle, AlertCircle, Share2, Copy, X } from "lucide-react"
 import QRCode from "qrcode"
+import { DatePicker } from "@/components/ui/date-picker"
 
 interface ShopData {
   shop: { id: string; name: string; phone: string; email: string; address: string; business_hours?: Record<string, { open: string; close: string }> }
@@ -320,12 +321,11 @@ export default function BookingPage({ params }: { params: Promise<{ shopId: stri
               <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-100 text-sm font-extrabold text-emerald-600">4</span>
               Select Date & Time
             </h2>
-            <input
-              type="date"
-              min={today}
-              className="w-full rounded-xl border px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            <DatePicker
               value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
+              onChange={setSelectedDate}
+              fromDate={new Date(today)}
+              placeholder="Pick a date"
             />
             <div className="mt-3 grid grid-cols-3 gap-2">
               {timeSlots.map((time) => (

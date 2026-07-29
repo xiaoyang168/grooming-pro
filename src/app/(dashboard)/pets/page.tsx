@@ -24,6 +24,7 @@ import {
 import { Search, Plus, PawPrint, Cake, AlertTriangle, Heart, Edit, Trash2, Loader2, Syringe, ShieldCheck, Calendar, X } from "lucide-react"
 import type { Pet, Customer, Vaccination } from "@/types"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
+import { DatePicker } from "@/components/ui/date-picker"
 
 interface PetWithOwner extends Pet {
   customer?: { id: string; name: string }
@@ -545,24 +546,25 @@ export default function PetsPage() {
               </div>
               <div>
                 <label className="text-xs font-semibold">Administered *</label>
-                <Input
-                  type="date"
-                  value={vaxForm.administered_date}
-                  onChange={(e) => setVaxForm({ ...vaxForm, administered_date: e.target.value })}
-                  required
-                  className="mt-1 h-9 text-sm"
-                />
+                <div className="mt-1">
+                  <DatePicker
+                    value={vaxForm.administered_date}
+                    onChange={(v) => setVaxForm({ ...vaxForm, administered_date: v })}
+                    placeholder="Pick date"
+                  />
+                </div>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-xs font-semibold">Expires (optional)</label>
-                <Input
-                  type="date"
-                  value={vaxForm.expires_at}
-                  onChange={(e) => setVaxForm({ ...vaxForm, expires_at: e.target.value })}
-                  className="mt-1 h-9 text-sm"
-                />
+                <div className="mt-1">
+                  <DatePicker
+                    value={vaxForm.expires_at}
+                    onChange={(v) => setVaxForm({ ...vaxForm, expires_at: v })}
+                    placeholder="Pick expiry date"
+                  />
+                </div>
               </div>
               <div>
                 <label className="text-xs font-semibold">Notes</label>
