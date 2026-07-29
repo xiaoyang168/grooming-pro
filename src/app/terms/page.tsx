@@ -49,9 +49,9 @@ export default function TermsOfServicePage() {
             <h2 className="text-xl font-bold mb-2">3. Subscription Plans &amp; Billing</h2>
             <h3 className="font-semibold mt-3 mb-1">3.1 Plans</h3>
             <ul className="list-disc pl-6 space-y-1 text-muted-foreground">
-              <li><strong>Starter ($29/month):</strong> Up to 2 staff, online booking, basic CRM, email notifications, 7-day data history.</li>
-              <li><strong>Professional ($29/month):</strong> Unlimited staff, AI scheduling, AI churn alerts, AI analytics, online payments, 30-day history, priority support.</li>
-              <li><strong>Enterprise ($59/month):</strong> All Pro features + multi-location, custom branding, API access, unlimited history, dedicated account manager.</li>
+              <li><strong>Starter (free 14-day trial):</strong> Up to 2 staff, online booking, customer & pet profiles, appointment calendar, email notifications.</li>
+              <li><strong>Professional ($29/month):</strong> Everything in Starter, plus AI smart scheduling, AI churn predictions, AI analytics, SMS notifications, vaccination records, inventory, loyalty packages.</li>
+              <li><strong>Enterprise ($59/month):</strong> Everything in Professional, plus priority email support and onboarding session.</li>
             </ul>
             <h3 className="font-semibold mt-3 mb-1">3.2 Free Trial</h3>
             <p className="text-muted-foreground leading-relaxed">

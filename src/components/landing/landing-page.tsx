@@ -43,23 +43,40 @@ const features = [
 
 const pricingPlans = [
   {
-    name: "Starter", price: "$29", period: "/month",
-    desc: "For small grooming studios",
-    features: ["Up to 2 staff members", "Online booking", "Basic customer management", "Email notifications", "7-day data history"],
+    name: "Starter", price: "$0", period: "/14-day trial",
+    desc: "Try GroomingPro free for 14 days. No credit card.",
+    features: [
+      "Up to 2 staff members",
+      "Online booking page",
+      "Customer & pet profiles",
+      "Appointment calendar",
+      "Email notifications",
+    ],
     cta: "Start Free Trial", popular: false,
   },
   {
     name: "Professional", price: "$29", period: "/month",
     desc: "For growing salons",
-    features: ["Unlimited staff", "AI smart scheduling", "AI churn alerts", "SMS + email notifications", "AI analytics dashboard",
-      "Secure online payments", "30-day data history", "Priority support"],
+    features: [
+      "Everything in Starter",
+      "AI smart scheduling suggestions",
+      "AI churn prediction alerts",
+      "AI analytics (ask in plain English)",
+      "SMS + email notifications",
+      "Vaccination records",
+      "Inventory & loyalty packages",
+      "Photo before/after uploads",
+    ],
     cta: "Start Free Trial", popular: true,
   },
   {
     name: "Enterprise", price: "$59", period: "/month",
-    desc: "For multi-location chains",
-    features: ["All Pro features", "Multi-location management", "Custom branding", "API access", "Unlimited data history",
-      "Dedicated account manager", "Custom reporting"],
+    desc: "For high-volume salons",
+    features: [
+      "Everything in Professional",
+      "Priority email support",
+      "Onboarding session",
+    ],
     cta: "Contact Sales", popular: false,
   },
 ]
