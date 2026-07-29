@@ -20,9 +20,8 @@ interface TimePickerProps {
 }
 
 /**
- * Beautiful inline time picker — HH:MM selectors shown directly.
- * Designed to avoid Radix Popover+Select nesting conflicts.
- * Returns value as "HH:MM" 24h string.
+ * Inline time picker — HH + MM selects shown directly, no popovers, no nesting.
+ * Avoids all Radix interactions so it's 100% reliable.
  */
 export function TimePicker({
   value,
@@ -62,45 +61,49 @@ export function TimePicker({
   return (
     <div
       className={cn(
-        "flex items-center gap-1 w-full h-9 rounded-xl border bg-background px-3 text-sm",
+        "w-full rounded-xl border bg-background px-3 py-2 space-y-1.5",
         disabled && "opacity-50 pointer-events-none",
         className
       )}
     >
-      <Clock className="h-4 w-4 opacity-70 shrink-0" />
-      {formatted ? (
-        <span className="font-medium tabular-nums">{formatted}</span>
-      ) : (
-        <span className="text-muted-foreground">Pick a time</span>
-      )}
-      <div className="ml-auto flex items-center gap-1">
-        <Select value={hh} onValueChange={setHour}>
-          <SelectTrigger className="h-7 w-14 px-2 text-xs border-0 bg-muted/40">
-            <SelectValue placeholder="HH" />
-          </SelectTrigger>
-          <SelectContent className="max-h-[240px]">
-            {hours.map((h) => <SelectItem key={h} value={h}>{h}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <span className="text-muted-foreground">:</span>
-        <Select value={mm} onValueChange={setMinute}>
-          <SelectTrigger className="h-7 w-14 px-2 text-xs border-0 bg-muted/40">
-            <SelectValue placeholder="MM" />
-          </SelectTrigger>
-          <SelectContent className="max-h-[240px]">
-            {minutes.map((min) => <SelectItem key={min} value={min}>{min}</SelectItem>)}
-          </SelectContent>
-        </Select>
+      <div className="flex items-center gap-2 text-sm">
+        <Clock className="h-4 w-4 opacity-70 shrink-0" />
+        <span className={cn("font-medium tabular-nums", !formatted && "text-muted-foreground")}>
+          {formatted ?? "Pick a time"}
+        </span>
         {formatted && (
           <button
             type="button"
             onClick={clear}
-            className="ml-1 h-5 w-5 rounded-full flex items-center justify-center text-muted-foreground hover:bg-muted"
+            className="ml-auto h-6 w-6 rounded-full flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground"
             aria-label="Clear time"
           >
             <X className="h-3 w-3" />
           </button>
         )}
+      </div>
+      <div className="flex items-center gap-2">
+        <Select value={hh} onValueChange={setHour}>
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Hour" />
+          </SelectTrigger>
+          <SelectContent className="max-h-[240px]">
+            {hours.map((h) => (
+              <SelectItem key={h} value={h}>{h}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <span className="text-muted-foreground">:</span>
+        <Select value={mm} onValueChange={setMinute}>
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Min" />
+          </SelectTrigger>
+          <SelectContent className="max-h-[240px]">
+            {minutes.map((min) => (
+              <SelectItem key={min} value={min}>{min}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
     </div>
   )
