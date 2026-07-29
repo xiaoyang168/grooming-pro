@@ -564,9 +564,15 @@ export default function AppointmentsPage() {
                             <button
                               type="button"
                               onClick={() => setLightbox({ url: apt.photo_before_url!, label: "Before" })}
-                              className="relative cursor-zoom-in"
+                              className="relative cursor-zoom-in block"
                             >
                               <img src={apt.photo_before_url} alt="Before" className="h-14 w-14 rounded-xl object-cover border-2 hover:border-primary transition-all" />
+                              {/* Loading overlay when uploading this specific photo */}
+                              {uploadingPhoto?.apptId === apt.id && uploadingPhoto?.type === "before" && (
+                                <div className="absolute inset-0 rounded-xl bg-black/60 flex items-center justify-center">
+                                  <Loader2 className="h-5 w-5 animate-spin text-white" />
+                                </div>
+                              )}
                               <div className="absolute inset-0 rounded-xl bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
                                 <Maximize2 className="h-4 w-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                               </div>
@@ -622,9 +628,15 @@ export default function AppointmentsPage() {
                             <button
                               type="button"
                               onClick={() => setLightbox({ url: apt.photo_after_url!, label: "After" })}
-                              className="relative cursor-zoom-in"
+                              className="relative cursor-zoom-in block"
                             >
                               <img src={apt.photo_after_url} alt="After" className="h-14 w-14 rounded-xl object-cover border-2 hover:border-primary transition-all" />
+                              {/* Loading overlay when uploading this specific photo */}
+                              {uploadingPhoto?.apptId === apt.id && uploadingPhoto?.type === "after" && (
+                                <div className="absolute inset-0 rounded-xl bg-black/60 flex items-center justify-center">
+                                  <Loader2 className="h-5 w-5 animate-spin text-white" />
+                                </div>
+                              )}
                               <div className="absolute inset-0 rounded-xl bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
                                 <Maximize2 className="h-4 w-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                               </div>
