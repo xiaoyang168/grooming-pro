@@ -1,5 +1,5 @@
 import { MetadataRoute } from "next"
-import { createClient } from "@/lib/supabase/server"
+import { createServiceClient } from "@/lib/supabase/server"
 
 export const dynamic = "force-dynamic"
 
@@ -18,7 +18,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Dynamic blog posts
   try {
-    const supabase = await createClient()
+    const supabase = createServiceClient()
     const { data: posts } = await supabase
       .from("blog_posts")
       .select("slug, published_at, updated_at")
