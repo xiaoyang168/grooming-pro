@@ -41,20 +41,16 @@ export function DatePicker({
     setInternal(value ? new Date(value + "T00:00:00") : undefined)
   }, [value])
 
-  // Defer closing popover until after react-day-picker's DOM cleanup settles
-  // — otherwise we hit "Failed to execute 'removeChild'" when Radix unmounts
-  // its portal at the same time react-day-picker is doing internal mutations.
-  React.useEffect(() => {
-    if (internal && open) {
-      const t = setTimeout(() => {
-        onChange(format(internal, "yyyy-MM-dd"))
-        setOpen(false)
-      }, 80)
-      return () => clearTimeout(t)
-    }
-  }, [internal, open])  // eslint-disable-line react-hooks/exhaustive-deps
-
   const display = internal
+
+  function handleSelect(d?: Date) {
+    const picked = d ?? undefined
+    setInternal(picked)
+    onChange(picked ? format(picked, "yyyy-MM-dd") : "")
+    // Defer close by 100ms to let react-day-picker finish its DOM cleanup
+    // before Radix Popover unmounts its portal — otherwise removeChild races.
+    setTimeout(() => setOpen(false), 100)
+  }
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -87,7 +83,7 @@ export function DatePicker({
         <Calendar
           mode="single"
           selected={display}
-          onSelect={(d) => setInternal(d ?? undefined)}
+          onSelect={handleSelect}
           disabled={(d) => {
             if (fromDate && d < fromDate) return true
             if (toDate && d > toDate) return true
