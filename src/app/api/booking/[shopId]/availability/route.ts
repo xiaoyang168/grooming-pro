@@ -20,14 +20,25 @@ export async function GET(
 
   const supabase = await createServiceClient()
 
-  // Verify shop exists (use slug OR id — booking page passes slug)
-  const { data: shop } = await supabase
+  // Verify shop exists (try id first, then slug — booking page may pass either)
+  let shop: { id: string } | null = null
+  const { data: byId } = await supabase
     .from("shops")
     .select("id")
-    .or(`id.eq.${shopId},slug.eq.${shopId}`)
-    .single()
+    .eq("id", shopId)
+    .maybeSingle()
+  if (byId) {
+    shop = byId
+  } else {
+    const { data: bySlug } = await supabase
+      .from("shops")
+      .select("id")
+      .eq("slug", shopId)
+      .maybeSingle()
+    if (bySlug) shop = bySlug
+  }
 
-  if (!shop) return NextResponse.json({ error: "Shop not found" }, { status: 404 })
+  if (!shop) return NextResponse.json({ error: "Shop not found", shopId }, { status: 404 })
 
   // Fetch all active appointments for that day, get start_time + end_time
   const startOfDay = `${date}T00:00:00`
