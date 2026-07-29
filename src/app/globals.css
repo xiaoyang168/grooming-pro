@@ -322,4 +322,3 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .card-hover:hover {
   border-color: oklch(0.72 0.18 55 / 0.2);
 }
-}
