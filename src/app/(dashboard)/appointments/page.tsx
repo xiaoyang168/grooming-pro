@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
-import { Plus, ChevronLeft, ChevronRight, MoreHorizontal, Clock, User, PawPrint, Scissors, Loader2, Camera, ImageIcon, Check, X, DollarSign, FileText } from "lucide-react"
+import { Plus, ChevronLeft, ChevronRight, MoreHorizontal, Clock, User, PawPrint, Scissors, Loader2, Camera, ImageIcon, Check, X, DollarSign, FileText, Maximize2 } from "lucide-react"
 import { DatePicker } from "@/components/ui/date-picker"
 import { TimePicker } from "@/components/ui/time-picker"
 import { formatDateLocal } from "@/lib/format"
@@ -57,6 +57,10 @@ export default function AppointmentsPage() {
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null)
   // Photo upload state — track (appointmentId, type) independently for before/after
   const [uploadingPhoto, setUploadingPhoto] = useState<{ apptId: string; type: "before" | "after" } | null>(null)
+  // Lightbox state — click image to view full size
+  const [lightbox, setLightbox] = useState<{ url: string; label: string } | null>(null)
+  // Drag-over state for drop zone visual feedback
+  const [dragOver, setDragOver] = useState<string | null>(null) // `${aptId}-${type}`
   const [statusMenuId, setStatusMenuId] = useState<string | null>(null)
 
   // Tip management state
@@ -540,78 +544,92 @@ export default function AppointmentsPage() {
                   {/* Photo section */}
                   {(apt.photo_before_url || apt.photo_after_url || apt.status !== "canceled") && (
                     <div className="mt-3 flex items-center gap-3 border-t pt-3">
-                      {/* Before Photo */}
+                      {/* Before Photo — click to enlarge / drag to upload */}
                       <div className="flex items-center gap-2">
-                        <label className="relative group cursor-pointer">
-                          {apt.photo_before_url ? (
-                            <img
-                              src={apt.photo_before_url}
-                              alt="Before"
-                              className="h-12 w-12 rounded-lg object-cover border"
-                            />
-                          ) : (
-                            <div className="flex h-12 w-12 items-center justify-center rounded-lg border-2 border-dashed bg-muted/30 text-muted-foreground group-hover:border-primary/50 transition-colors">
+                        {apt.photo_before_url ? (
+                          <button
+                            type="button"
+                            onClick={() => setLightbox({ url: apt.photo_before_url!, label: "Before" })}
+                            className="relative group cursor-zoom-in"
+                          >
+                            <img src={apt.photo_before_url} alt="Before" className="h-14 w-14 rounded-xl object-cover border-2 hover:border-primary transition-all group-hover:scale-105" />
+                            <div className="absolute inset-0 rounded-xl bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                              <Maximize2 className="h-4 w-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </div>
+                          </button>
+                        ) : (
+                          <label
+                            className={`relative group cursor-pointer rounded-xl transition-all ${dragOver === `${apt.id}-before` ? "scale-105" : ""}`}
+                            onDragOver={(e) => { e.preventDefault(); setDragOver(`${apt.id}-before`) }}
+                            onDragLeave={() => setDragOver(null)}
+                            onDrop={(e) => {
+                              e.preventDefault(); setDragOver(null)
+                              const file = e.dataTransfer.files?.[0]
+                              if (file && file.type.startsWith("image/")) handlePhotoUpload(apt.id, "before", file)
+                            }}
+                          >
+                            <div className={`flex h-14 w-14 items-center justify-center rounded-xl border-2 border-dashed bg-muted/30 text-muted-foreground transition-all ${dragOver === `${apt.id}-before` ? "border-primary bg-primary/10 text-primary scale-105" : "group-hover:border-primary/50"}`}>
                               {uploadingPhoto?.apptId === apt.id && uploadingPhoto?.type === "before" ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
                               ) : (
                                 <Camera className="h-4 w-4" />
                               )}
                             </div>
-                          )}
-                          <span className="absolute -bottom-4 left-1/2 -translate-x-1/2 text-[10px] text-muted-foreground whitespace-nowrap">
-                            Before
-                          </span>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0]
-                              if (file) {
-                                handlePhotoUpload(apt.id, "before", file)
-                                e.target.value = "" // reset so same file can be picked again
-                              }
-                            }}
-                            disabled={uploadingPhoto?.apptId === apt.id}
-                          />
-                        </label>
+                            <input
+                              type="file" accept="image/*" className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0]
+                                if (file) { handlePhotoUpload(apt.id, "before", file); e.target.value = "" }
+                              }}
+                              disabled={uploadingPhoto?.apptId === apt.id}
+                            />
+                          </label>
+                        )}
+                        <span className="text-[10px] text-muted-foreground whitespace-nowrap">Before</span>
                       </div>
 
-                      {/* After Photo */}
+                      {/* After Photo — click to enlarge / drag to upload */}
                       <div className="flex items-center gap-2">
-                        <label className="relative group cursor-pointer">
-                          {apt.photo_after_url ? (
-                            <img
-                              src={apt.photo_after_url}
-                              alt="After"
-                              className="h-12 w-12 rounded-lg object-cover border"
-                            />
-                          ) : (
-                            <div className="flex h-12 w-12 items-center justify-center rounded-lg border-2 border-dashed bg-muted/30 text-muted-foreground group-hover:border-primary/50 transition-colors">
+                        {apt.photo_after_url ? (
+                          <button
+                            type="button"
+                            onClick={() => setLightbox({ url: apt.photo_after_url!, label: "After" })}
+                            className="relative group cursor-zoom-in"
+                          >
+                            <img src={apt.photo_after_url} alt="After" className="h-14 w-14 rounded-xl object-cover border-2 hover:border-primary transition-all group-hover:scale-105" />
+                            <div className="absolute inset-0 rounded-xl bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                              <Maximize2 className="h-4 w-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </div>
+                          </button>
+                        ) : (
+                          <label
+                            className={`relative group cursor-pointer rounded-xl transition-all ${dragOver === `${apt.id}-after` ? "scale-105" : ""}`}
+                            onDragOver={(e) => { e.preventDefault(); setDragOver(`${apt.id}-after`) }}
+                            onDragLeave={() => setDragOver(null)}
+                            onDrop={(e) => {
+                              e.preventDefault(); setDragOver(null)
+                              const file = e.dataTransfer.files?.[0]
+                              if (file && file.type.startsWith("image/")) handlePhotoUpload(apt.id, "after", file)
+                            }}
+                          >
+                            <div className={`flex h-14 w-14 items-center justify-center rounded-xl border-2 border-dashed bg-muted/30 text-muted-foreground transition-all ${dragOver === `${apt.id}-after` ? "border-primary bg-primary/10 text-primary scale-105" : "group-hover:border-primary/50"}`}>
                               {uploadingPhoto?.apptId === apt.id && uploadingPhoto?.type === "after" ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
                               ) : (
                                 <ImageIcon className="h-4 w-4" />
                               )}
                             </div>
-                          )}
-                          <span className="absolute -bottom-4 left-1/2 -translate-x-1/2 text-[10px] text-muted-foreground whitespace-nowrap">
-                            After
-                          </span>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0]
-                              if (file) {
-                                handlePhotoUpload(apt.id, "after", file)
-                                e.target.value = "" // reset so same file can be picked again
-                              }
-                            }}
-                            disabled={uploadingPhoto?.apptId === apt.id}
-                          />
-                        </label>
+                            <input
+                              type="file" accept="image/*" className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0]
+                                if (file) { handlePhotoUpload(apt.id, "after", file); e.target.value = "" }
+                              }}
+                              disabled={uploadingPhoto?.apptId === apt.id}
+                            />
+                          </label>
+                        )}
+                        <span className="text-[10px] text-muted-foreground whitespace-nowrap">After</span>
                       </div>
                     </div>
                   )}
@@ -674,6 +692,24 @@ export default function AppointmentsPage() {
               Complete
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Lightbox — click photo to view full size */}
+      <Dialog open={!!lightbox} onOpenChange={(open) => !open && setLightbox(null)}>
+        <DialogContent className="max-w-3xl p-0 overflow-hidden">
+          <div className="relative">
+            <img src={lightbox?.url} alt={lightbox?.label} className="w-full h-auto max-h-[80vh] object-contain bg-black/5" />
+            <div className="absolute top-3 left-3 rounded-lg bg-black/60 px-3 py-1 text-sm font-semibold text-white">
+              {lightbox?.label}
+            </div>
+            <button
+              onClick={() => setLightbox(null)}
+              className="absolute top-3 right-3 h-8 w-8 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
