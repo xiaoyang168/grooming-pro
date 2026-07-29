@@ -29,12 +29,12 @@ export const metadata: Metadata = {
     "AI scheduling",
     "grooming business tools",
   ],
-  metadataBase: new URL("https://petsalonos.com"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://www.petsalonos.com"),
   openGraph: {
     title: "GroomingPro — Smart Pet Grooming Management",
     description:
       "AI-powered pet grooming salon SaaS. Bookings, CRM, marketing — all in one place.",
-    url: "https://petsalonos.com",
+    url: process.env.NEXT_PUBLIC_APP_URL || "https://www.petsalonos.com",
     siteName: "GroomingPro",
     type: "website",
   },

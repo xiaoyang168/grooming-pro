@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
       .eq("id", apt.shop_id)
       .single()
 
-    const origin = process.env.NEXT_PUBLIC_APP_URL || "https://petsalonos.com"
+    const origin = process.env.NEXT_PUBLIC_APP_URL || "https://www.petsalonos.com"
     const shopSlug = shop?.slug || apt.shop_id
 
     // Create Creem checkout for one-time deposit

@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
           serviceName: "grooming",
           startTime: data.start_time,
           shopName: shop?.name || "GroomingPro",
-          bookingLink: `https://petsalonos.com/booking/${shopId}`,
+          bookingLink: `${process.env.NEXT_PUBLIC_APP_URL || "https://www.petsalonos.com"}/booking/${shopId}`,
         }).catch(() => {})
       }
 

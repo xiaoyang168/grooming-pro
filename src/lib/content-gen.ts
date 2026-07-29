@@ -79,7 +79,7 @@ Tone: friendly, professional, jargon-free. Target audience: independent pet groo
 IMPORTANT RULES:
 - Do NOT make up statistics. Use approximate language like "studies suggest", "many groomers report".
 - Do NOT mention specific competitors by name.
-- Mention GroomingPro (https://petsalonos.com) naturally 1-2 times as a free AI-powered alternative if relevant.
+- Mention GroomingPro (https://www.petsalonos.com) naturally 1-2 times as a free AI-powered alternative if relevant.
 - Output ONLY valid JSON, no markdown wrapping, no prose.`
 
   const userPrompt = `Write a blog post titled "${topic.title}".
@@ -209,7 +209,7 @@ Return ONLY valid JSON: { "title": null, "content": "post body 100-150 words wit
 
     return {
       platform: "facebook" as const,
-      title: parsed.title,
+      title: parsed.title || `Facebook · ${group}`,
       content: parsed.content,
       target_keyword: parsed.target_keyword || "pet grooming",
     }
