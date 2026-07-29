@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { Plus, Gift, Loader2, Trash2 } from "lucide-react"
 
 interface Pkg {
@@ -21,6 +22,10 @@ export default function LoyaltyPage() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [form, setForm] = useState({ name: "", description: "", visits: "5", price: "" })
+
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   async function fetchPackages() {
     try {
@@ -51,12 +56,20 @@ export default function LoyaltyPage() {
     } catch { /* ignore */ } finally { setSubmitting(false) }
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm("Delete this package?")) return
+  function handleDelete(id: string) {
+    setDeletingId(id)
+    setDeleteOpen(true)
+  }
+
+  async function confirmDelete() {
+    if (!deletingId) return
+    setDeleting(true)
     try {
-      await fetch(`/api/packages/${id}`, { method: "DELETE" })
-      setPackages(packages.filter((p) => p.id !== id))
-    } catch { /* ignore */ }
+      await fetch(`/api/packages/${deletingId}`, { method: "DELETE" })
+      setPackages(packages.filter((p) => p.id !== deletingId))
+      setDeleteOpen(false)
+      setDeletingId(null)
+    } catch { /* ignore */ } finally { setDeleting(false) }
   }
 
   const fmt = (cents: number) => `$${(cents / 100).toFixed(2)}`
@@ -120,6 +133,17 @@ export default function LoyaltyPage() {
           ))}
         </div>
       )}
+
+      <ConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Delete this package?"
+        description="Customers who purchased this package will keep their remaining visits. This action cannot be undone."
+        confirmText="Delete"
+        danger
+        loading={deleting}
+        onConfirm={confirmDelete}
+      />
     </div>
   )
 }

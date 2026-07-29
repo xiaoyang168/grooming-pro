@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog"
 import { Search, Plus, Phone, ChevronRight, PawPrint, CalendarCheck, Loader2, X, Pencil, Trash2 } from "lucide-react"
 import type { Customer } from "@/types"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 
 export default function CustomersPage() {
   const [search, setSearch] = useState("")
@@ -29,6 +30,10 @@ export default function CustomersPage() {
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editForm, setEditForm] = useState({ name: "", email: "", phone: "", notes: "" })
+
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   async function fetchCustomers() {
     try {
@@ -111,13 +116,21 @@ export default function CustomersPage() {
     } catch { /* ignore */ }
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm("Delete this customer? All their pets and appointments will remain but be unlinked. This cannot be undone.")) return
+  function handleDelete(id: string) {
+    setDeletingId(id)
+    setDeleteOpen(true)
+  }
+
+  async function confirmDelete() {
+    if (!deletingId) return
+    setDeleting(true)
     try {
-      const res = await fetch(`/api/customers/${id}`, { method: "DELETE" })
+      const res = await fetch(`/api/customers/${deletingId}`, { method: "DELETE" })
       if (!res.ok) throw new Error("Failed to delete customer")
-      setCustomers(customers.filter((c) => c.id !== id))
-    } catch { /* ignore */ }
+      setCustomers(customers.filter((c) => c.id !== deletingId))
+      setDeleteOpen(false)
+      setDeletingId(null)
+    } catch { /* ignore */ } finally { setDeleting(false) }
   }
 
   if (loading) {
@@ -325,6 +338,17 @@ export default function CustomersPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Delete this customer?"
+        description="All their pets and appointments will remain but be unlinked from this customer. This action cannot be undone."
+        confirmText="Delete"
+        danger
+        loading={deleting}
+        onConfirm={confirmDelete}
+      />
     </div>
   )
 }

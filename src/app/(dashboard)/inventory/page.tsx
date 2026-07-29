@@ -12,6 +12,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select"
 import { Plus, Package, Loader2, Trash2, Pencil, AlertTriangle } from "lucide-react"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 
 interface InventoryItem {
   id: string; name: string; sku: string | null; category: string;
@@ -34,6 +35,11 @@ export default function InventoryPage() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [form, setForm] = useState({ name: "", category: "other", sku: "", price: "", cost: "", stock: "", threshold: "5", description: "" })
+
+  // Delete confirm dialog state
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   async function fetchItems() {
     try {
@@ -67,12 +73,22 @@ export default function InventoryPage() {
     } catch { /* ignore */ } finally { setSubmitting(false) }
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm("Delete this item?")) return
+  function handleDelete(id: string) {
+    setDeletingId(id)
+    setDeleteOpen(true)
+  }
+
+  async function confirmDelete() {
+    if (!deletingId) return
+    setDeleting(true)
     try {
-      await fetch(`/api/inventory/${id}`, { method: "DELETE" })
-      setItems(items.filter((i) => i.id !== id))
-    } catch { /* ignore */ }
+      await fetch(`/api/inventory/${deletingId}`, { method: "DELETE" })
+      setItems(items.filter((i) => i.id !== deletingId))
+      setDeleteOpen(false)
+      setDeletingId(null)
+    } finally {
+      setDeleting(false)
+    }
   }
 
   const fmt = (cents: number) => `$${(cents / 100).toFixed(2)}`
@@ -151,6 +167,17 @@ export default function InventoryPage() {
           })}
         </div>
       )}
+
+      <ConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Delete this item?"
+        description="This will permanently remove the item from your inventory. This action cannot be undone."
+        confirmText="Delete"
+        danger
+        loading={deleting}
+        onConfirm={confirmDelete}
+      />
     </div>
   )
 }

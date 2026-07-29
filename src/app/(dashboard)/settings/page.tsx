@@ -24,6 +24,7 @@ import {
 import { Store, Clock, Scissors, CreditCard, Plus, Pencil, Sparkles, Loader2, Share2, Copy, X, CheckCircle, Users, Trash2 } from "lucide-react"
 import QRCode from "qrcode"
 import type { Service } from "@/types"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 
 const DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
 const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
@@ -73,6 +74,11 @@ export default function SettingsPage() {
   // Service edit state
   const [editServiceOpen, setEditServiceOpen] = useState(false)
   const [editServiceForm, setEditServiceForm] = useState({ id: "", name: "", duration_minutes: "", price: "", description: "" })
+
+  // Service delete confirm
+  const [svcDeleteOpen, setSvcDeleteOpen] = useState(false)
+  const [svcDeletingId, setSvcDeletingId] = useState<string | null>(null)
+  const [svcDeleting, setSvcDeleting] = useState(false)
 
   async function handleUpgrade(plan: "pro" | "business") {
     setUpgradeLoading(true)
@@ -297,13 +303,21 @@ export default function SettingsPage() {
     } catch { /* ignore */ }
   }
 
-  async function handleDeleteService(id: string) {
-    if (!confirm("Delete this service? Existing appointments will keep the record.")) return
+  function handleDeleteService(id: string) {
+    setSvcDeletingId(id)
+    setSvcDeleteOpen(true)
+  }
+
+  async function confirmDeleteService() {
+    if (!svcDeletingId) return
+    setSvcDeleting(true)
     try {
-      const res = await fetch(`/api/services/${id}`, { method: "DELETE" })
+      const res = await fetch(`/api/services/${svcDeletingId}`, { method: "DELETE" })
       if (!res.ok) throw new Error("Failed to delete service")
-      setServices(services.filter((s) => s.id !== id))
-    } catch { /* ignore */ }
+      setServices(services.filter((s) => s.id !== svcDeletingId))
+      setSvcDeleteOpen(false)
+      setSvcDeletingId(null)
+    } catch { /* ignore */ } finally { setSvcDeleting(false) }
   }
 
   if (loading) {
@@ -817,6 +831,17 @@ export default function SettingsPage() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={svcDeleteOpen}
+        onOpenChange={setSvcDeleteOpen}
+        title="Delete this service?"
+        description="Existing appointments will keep the record. This action cannot be undone."
+        confirmText="Delete"
+        danger
+        loading={svcDeleting}
+        onConfirm={confirmDeleteService}
+      />
     </div>
   )
 }

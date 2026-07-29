@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select"
 import { Search, Plus, PawPrint, Cake, AlertTriangle, Heart, Edit, Trash2, Loader2, Syringe, ShieldCheck, Calendar, X } from "lucide-react"
 import type { Pet, Customer, Vaccination } from "@/types"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 
 interface PetWithOwner extends Pet {
   customer?: { id: string; name: string }
@@ -61,6 +62,11 @@ export default function PetsPage() {
   const [vaxLoading, setVaxLoading] = useState(false)
   const [vaxForm, setVaxForm] = useState({ vaccine_name: "", administered_date: "", expires_at: "", notes: "" })
   const [vaxSubmitting, setVaxSubmitting] = useState(false)
+
+  // Delete confirm dialog state
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   async function fetchPets() {
     try {
@@ -170,14 +176,24 @@ export default function PetsPage() {
     }
   }
 
-  async function handleDeletePet(petId: string) {
-    if (!confirm("Delete this pet? This cannot be undone.")) return
+  function handleDeletePet(petId: string) {
+    setDeletingId(petId)
+    setDeleteOpen(true)
+  }
+
+  async function confirmDeletePet() {
+    if (!deletingId) return
+    setDeleting(true)
     try {
-      const res = await fetch(`/api/pets/${petId}`, { method: "DELETE" })
+      const res = await fetch(`/api/pets/${deletingId}`, { method: "DELETE" })
       if (!res.ok) throw new Error("Failed to delete pet")
-      setPets(pets.filter((p) => p.id !== petId))
+      setPets(pets.filter((p) => p.id !== deletingId))
+      setDeleteOpen(false)
+      setDeletingId(null)
     } catch {
       // ignore
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -612,6 +628,17 @@ export default function PetsPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Delete this pet?"
+        description="This will permanently remove the pet profile. This action cannot be undone."
+        confirmText="Delete"
+        danger
+        loading={deleting}
+        onConfirm={confirmDeletePet}
+      />
     </div>
   )
 }
