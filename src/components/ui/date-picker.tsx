@@ -20,7 +20,7 @@ interface DatePickerProps {
 
 /**
  * Beautiful date picker — click button to open a calendar popover.
- * Returns value as ISO string "YYYY-MM-DD" (compatible with <input type="date"> consumers).
+ * Returns value as ISO string "YYYY-MM-DD".
  */
 export function DatePicker({
   value,
@@ -31,8 +31,17 @@ export function DatePicker({
   toDate,
   className,
 }: DatePickerProps) {
-  const date = value ? new Date(value + "T00:00:00") : undefined
   const [open, setOpen] = React.useState(false)
+  // Local mirror of selected date so Calendar's selected prop is always correct
+  const [internal, setInternal] = React.useState<Date | undefined>(
+    value ? new Date(value + "T00:00:00") : undefined
+  )
+  // Sync internal when external `value` changes (e.g. when form is reset)
+  React.useEffect(() => {
+    setInternal(value ? new Date(value + "T00:00:00") : undefined)
+  }, [value])
+
+  const display = internal
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -43,16 +52,20 @@ export function DatePicker({
           disabled={disabled}
           className={cn(
             "w-full justify-start text-left font-normal h-9 px-3 text-sm",
-            !date && "text-muted-foreground",
+            !display && "text-muted-foreground",
             className
           )}
         >
           <CalendarIcon className="mr-2 h-4 w-4 opacity-70" />
-          {date ? format(date, "MMM d, yyyy") : <span>{placeholder}</span>}
-          {date && (
+          {display ? format(display, "MMM d, yyyy") : <span>{placeholder}</span>}
+          {display && (
             <X
               className="ml-auto h-4 w-4 opacity-50 hover:opacity-100"
-              onClick={(e) => { e.stopPropagation(); onChange("") }}
+              onClick={(e) => {
+                e.stopPropagation()
+                setInternal(undefined)
+                onChange("")
+              }}
             />
           )}
         </Button>
@@ -60,9 +73,11 @@ export function DatePicker({
       <PopoverContent className="w-auto p-0" align="start">
         <Calendar
           mode="single"
-          selected={date}
+          selected={display}
           onSelect={(d) => {
-            onChange(d ? format(d, "yyyy-MM-dd") : "")
+            const picked = d ?? undefined
+            setInternal(picked)
+            onChange(picked ? format(picked, "yyyy-MM-dd") : "")
             setOpen(false)
           }}
           disabled={(d) => {

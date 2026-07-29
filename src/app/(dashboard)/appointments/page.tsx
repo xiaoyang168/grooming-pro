@@ -24,6 +24,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Plus, ChevronLeft, ChevronRight, MoreHorizontal, Clock, User, PawPrint, Scissors, Loader2, Camera, ImageIcon, Check, X, DollarSign, FileText } from "lucide-react"
 import { DatePicker } from "@/components/ui/date-picker"
+import { TimePicker } from "@/components/ui/time-picker"
 import { formatDateLocal } from "@/lib/format"
 import type { AppointmentWithDetails, Customer, Pet, Staff, Service } from "@/types"
 
@@ -357,7 +358,7 @@ export default function AppointmentsPage() {
                 </div>
                 <div>
                   <label className="text-sm font-semibold">Time *</label>
-                  <Input type="time" value={form.time} onChange={(e) => setForm({ ...form, time: e.target.value })} required className="mt-1.5" />
+                  <div className="mt-1.5"><TimePicker value={form.time} onChange={(v) => setForm({ ...form, time: v })} placeholder="Pick time" /></div>
                 </div>
               </div>
               <div>
