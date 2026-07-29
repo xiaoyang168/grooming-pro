@@ -51,11 +51,14 @@ const SEO_TOPICS = [
   { keyword: "pet grooming scheduling", angle: "how-to", title: "Smart Scheduling: How to Fill Empty Slots in Your Salon" },
 ]
 
-let seoIndex = 0
+// Deterministic-by-date rotation — survives serverless cold starts
+// (module-level counters reset on every invocation, breaking rotation)
+function dayOfYear(d = new Date()): number {
+  const start = new Date(d.getFullYear(), 0, 0)
+  return Math.floor((d.getTime() - start.getTime()) / 86400000)
+}
 function getNextTopic() {
-  const topic = SEO_TOPICS[seoIndex % SEO_TOPICS.length]
-  seoIndex++
-  return topic
+  return SEO_TOPICS[dayOfYear() % SEO_TOPICS.length]
 }
 
 // ── Blog Post Generation ────────────────────────────
@@ -129,9 +132,6 @@ Return ONLY valid JSON with this exact structure:
 const SUBREDDITS = ["r/doggrooming", "r/Pets", "r/smallbusiness", "r/SaaS", "r/SideProject"]
 const FB_GROUPS = ["GroomerTalk", "Professional Pet Groomers", "Pet Grooming Business Owners"]
 
-let redditIdx = 0
-let fbIdx = 0
-
 export async function generateRedditPost(): Promise<{
   platform: "reddit"
   subreddit: string
@@ -139,8 +139,7 @@ export async function generateRedditPost(): Promise<{
   content: string
   target_keyword: string
 } | null> {
-  const subreddit = SUBREDDITS[redditIdx % SUBREDDITS.length]
-  redditIdx++
+  const subreddit = SUBREDDITS[dayOfYear() % SUBREDDITS.length]
 
   const systemPrompt = `You write helpful, authentic Reddit posts for the pet grooming industry.
 CRITICAL: Reddit users hate self-promotion. Posts must be 90% helpful content, only 10% subtle product mention at the very end.
@@ -186,8 +185,7 @@ export async function generateFacebookPost(): Promise<{
   content: string
   target_keyword: string
 } | null> {
-  const group = FB_GROUPS[fbIdx % FB_GROUPS.length]
-  fbIdx++
+  const group = FB_GROUPS[dayOfYear() % FB_GROUPS.length]
 
   const systemPrompt = `You write helpful Facebook group posts for pet groomers.
 Tone: warm, conversational, like a salon owner sharing advice with peers.

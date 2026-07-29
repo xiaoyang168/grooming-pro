@@ -34,6 +34,16 @@ export async function GET(request: NextRequest) {
         if (!blog) {
           return NextResponse.json({ error: "Blog generation returned null" }, { status: 500 })
         }
+        // Dedup guard: skip if an identical title was already published recently
+        // (prevents duplicate posts on cron retries / overlaps)
+        const { data: existing } = await supabase
+          .from("blog_posts")
+          .select("id")
+          .eq("title", blog.title)
+          .limit(1)
+        if (existing && existing.length > 0) {
+          return NextResponse.json({ type: "blog", skipped: true, title: blog.title, reason: "duplicate" })
+        }
         const { error } = await supabase.from("blog_posts").insert({
           slug: blog.slug,
           title: blog.title,
