@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
   CalendarCheck, Users, BarChart3, Sparkles, CreditCard, ArrowRight, Star,
-  Shield, Zap, Clock, TrendingUp, Scissors, PawPrint, Bell, Brain, MousePointerClick,
+  Shield, Zap, Clock, TrendingUp, Scissors, PawPrint, Bell, Brain, MousePointerClick, Cake,
 } from "lucide-react"
 
 const features = [
@@ -35,9 +35,9 @@ const features = [
     color: "text-rose-500", bg: "bg-rose-50",
   },
   {
-    icon: CreditCard, title: "Online Payments", badge: "Coming soon",
-    desc: "Secure card payments at booking to reduce no-shows. Currently accepting pay-at-store — online deposits coming soon.",
-    color: "text-cyan-500", bg: "bg-cyan-50",
+    icon: Cake, title: "Pet Birthday Tracking",
+    desc: "Never miss a pet's special day. Track birthdays and send automated celebration emails with discount coupons to bring customers back.",
+    color: "text-pink-500", bg: "bg-pink-50",
   },
 ]
 
