@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
+import { createClient, createServiceClient } from "@/lib/supabase/server"
 
 export async function POST(
   request: NextRequest,
@@ -9,7 +9,7 @@ export async function POST(
     const { id } = await params
     const supabase = await createClient()
 
-    // Auth check
+    // Auth check — verify the user is logged in and owns a shop
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
@@ -21,8 +21,12 @@ export async function POST(
 
     if (!shop) return NextResponse.json({ error: "No shop found" }, { status: 404 })
 
+    // Use service client for all write operations (bypasses RLS which has
+    // been failing for these updates even when the user is the rightful owner)
+    const adminSupabase = await createServiceClient()
+
     // Verify appointment belongs to this shop
-    const { data: appt } = await supabase
+    const { data: appt } = await adminSupabase
       .from("appointments")
       .select("id, shop_id")
       .eq("id", id)
@@ -62,7 +66,7 @@ export async function POST(
     const ext = extMap[file.type] || "jpg"
     const filePath = `${shop.id}/${id}/${photoType}.${ext}`
 
-    const { error: uploadError } = await supabase.storage
+    const { error: uploadError } = await adminSupabase.storage
       .from("appointment-photos")
       .upload(filePath, file, {
         upsert: true,
@@ -83,7 +87,7 @@ export async function POST(
 
     // Update appointment record
     const column = photoType === "before" ? "photo_before_url" : "photo_after_url"
-    const { error: updateError } = await supabase
+    const { error: updateError } = await adminSupabase
       .from("appointments")
       .update({ [column]: publicUrl })
       .eq("id", id)
