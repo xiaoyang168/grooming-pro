@@ -50,7 +50,7 @@ export default function TermsOfServicePage() {
             <h3 className="font-semibold mt-3 mb-1">3.1 Plans</h3>
             <ul className="list-disc pl-6 space-y-1 text-muted-foreground">
               <li><strong>Starter (free 14-day trial):</strong> Up to 2 staff, online booking, customer & pet profiles, appointment calendar, email notifications.</li>
-              <li><strong>Professional ($29/month):</strong> Everything in Starter, plus AI smart scheduling, AI churn predictions, AI analytics, SMS notifications, vaccination records, inventory, loyalty packages.</li>
+              <li><strong>Professional ($29/month):</strong> Everything in Starter, plus AI smart scheduling, AI churn predictions, AI analytics, vaccination records, inventory, loyalty packages.</li>
               <li><strong>Enterprise ($59/month):</strong> Everything in Professional, plus priority email support and onboarding session.</li>
             </ul>
             <h3 className="font-semibold mt-3 mb-1">3.2 Free Trial</h3>

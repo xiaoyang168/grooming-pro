@@ -62,7 +62,7 @@ const pricingPlans = [
       "AI smart scheduling suggestions",
       "AI churn prediction alerts",
       "AI analytics (ask in plain English)",
-      "SMS + email notifications",
+      "Email notifications",
       "Vaccination records",
       "Inventory & loyalty packages",
       "Photo before/after uploads",
