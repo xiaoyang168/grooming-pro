@@ -255,23 +255,17 @@ export default function BookingPage({ params }: { params: Promise<{ shopId: stri
           </div>
         )}
 
-        {/* Pay Deposit button — shown after successful booking */}
-        {result?.success && appointmentId && (
-          <button
-            onClick={handlePayDeposit}
-            disabled={payingDeposit}
-            className="w-full rounded-2xl bg-gradient-to-r from-primary to-pink-500 text-white font-bold py-4 px-6 shadow-lg hover:shadow-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            {payingDeposit ? (
-              <>
-                <Loader2 className="h-5 w-5 animate-spin" /> Redirecting to payment...
-              </>
-            ) : (
-              <>
-                <CreditCard className="h-5 w-5" /> Pay Deposit Online
-              </>
-            )}
-          </button>
+        {/* Pay at Store notice — shown after successful booking */}
+        {result?.success && (
+          <div className="rounded-2xl bg-amber-50 border border-amber-200 p-4 flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-amber-900">Pay at Store</p>
+              <p className="text-xs text-amber-700 mt-1">
+                Please pay a $10 deposit at the store on the day of your appointment. Bring your confirmation email or show the booking confirmation on your phone.
+              </p>
+            </div>
+          </div>
         )}
 
         {!result?.success && (
