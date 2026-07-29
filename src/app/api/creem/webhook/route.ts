@@ -37,7 +37,36 @@ export async function POST(request: NextRequest) {
   const supabase = await createServiceClient()
 
   switch (event.eventType) {
-    case "checkout.completed":
+    case "checkout.completed": {
+      const obj = event.object || {}
+      const metadata = obj.metadata || {}
+
+      // ── Customer deposit payment (one-time) ──
+      if (metadata.type === "deposit" && metadata.appointment_id) {
+        await supabase
+          .from("appointments")
+          .update({ payment_status: "paid" })
+          .eq("id", metadata.appointment_id)
+        break
+      }
+
+      // ── Subscription checkout (existing logic) ──
+      const productId = obj.product?.id
+      const userId = metadata.user_id
+      const plan = getPlanFromProduct(productId)
+
+      if (userId && plan !== "free") {
+        await supabase
+          .from("shops")
+          .update({
+            subscription_tier: plan,
+            subscription_status: "active",
+          })
+          .eq("owner_id", userId)
+      }
+      break
+    }
+
     case "subscription.active":
     case "subscription.paid": {
       const obj = event.object || {}

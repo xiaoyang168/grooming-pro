@@ -13,10 +13,11 @@ export const creem = new Creem({
   server: server as "test" | "prod",
 })
 
-// Product IDs for each plan
+// Product IDs for each plan + customer deposit
 export const CREEM_PRODUCTS = {
   pro: process.env.CREEM_PRO_PRODUCT_ID || "prod_251KFqWHRpYCEwXd8TyenP",
   business: process.env.CREEM_BUSINESS_PRODUCT_ID || "prod_5t0lrDHjgVZCww6cbxvzmD",
+  deposit: process.env.CREEM_DEPOSIT_PRODUCT_ID || "",
 } as const
 
 export function getProductForPlan(plan: "pro" | "business"): string {

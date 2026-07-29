@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, use, useRef } from "react"
-import { PawPrint, Clock, Scissors, Sparkles, Loader2, CheckCircle, AlertCircle, Share2, Copy, X } from "lucide-react"
+import { PawPrint, Clock, Scissors, Sparkles, Loader2, CheckCircle, AlertCircle, Share2, Copy, X, CreditCard } from "lucide-react"
 import QRCode from "qrcode"
 import { DatePicker } from "@/components/ui/date-picker"
 
@@ -31,6 +31,8 @@ export default function BookingPage({ params }: { params: Promise<{ shopId: stri
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null)
+  const [appointmentId, setAppointmentId] = useState<string | null>(null)
+  const [payingDeposit, setPayingDeposit] = useState(false)
 
   const [customerName, setCustomerName] = useState("")
   const [customerEmail, setCustomerEmail] = useState("")
@@ -63,6 +65,17 @@ export default function BookingPage({ params }: { params: Promise<{ shopId: stri
   useEffect(() => {
     const today = new Date()
     setSelectedDate(today.toISOString().slice(0, 10))
+  }, [])
+
+  // Check if returning from Creem payment
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get("payment") === "success") {
+      setResult({ success: true, message: "Deposit paid! Your booking is confirmed." })
+      setAppointmentId(params.get("apt") || null)
+      // Clean URL
+      window.history.replaceState({}, "", window.location.pathname)
+    }
   }, [])
 
   function validateAndScroll() {
@@ -117,10 +130,33 @@ export default function BookingPage({ params }: { params: Promise<{ shopId: stri
       const json = await res.json()
       if (!res.ok) throw new Error(json.error || "Booking failed")
       setResult({ success: true, message: json.data?.message || "Booking submitted!" })
+      setAppointmentId(json.data?.appointment?.id || null)
     } catch (err: unknown) {
       setResult({ success: false, message: err instanceof Error ? err.message : "Failed to book" })
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  async function handlePayDeposit() {
+    if (!appointmentId) return
+    setPayingDeposit(true)
+    try {
+      const res = await fetch("/api/creem/payment-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ appointment_id: appointmentId }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || "Failed to start payment")
+      if (json.url) window.location.href = json.url
+    } catch (err: unknown) {
+      setResult({
+        success: false,
+        message: err instanceof Error ? err.message : "Payment failed",
+      })
+    } finally {
+      setPayingDeposit(false)
     }
   }
 
@@ -203,6 +239,25 @@ export default function BookingPage({ params }: { params: Promise<{ shopId: stri
               {result.message}
             </p>
           </div>
+        )}
+
+        {/* Pay Deposit button — shown after successful booking */}
+        {result?.success && appointmentId && (
+          <button
+            onClick={handlePayDeposit}
+            disabled={payingDeposit}
+            className="w-full rounded-2xl bg-gradient-to-r from-primary to-pink-500 text-white font-bold py-4 px-6 shadow-lg hover:shadow-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            {payingDeposit ? (
+              <>
+                <Loader2 className="h-5 w-5 animate-spin" /> Redirecting to payment...
+              </>
+            ) : (
+              <>
+                <CreditCard className="h-5 w-5" /> Pay Deposit Online
+              </>
+            )}
+          </button>
         )}
 
         {!result?.success && (

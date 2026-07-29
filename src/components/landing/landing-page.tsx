@@ -11,12 +11,12 @@ import {
 const features = [
   {
     icon: CalendarCheck, title: "AI Smart Scheduling",
-    desc: "Automatically optimize time slots, reduce gaps, and fill waitlists. Conflict detection built in.",
+    desc: "AI suggests optimal time slots, detects conflicts, and minimizes gaps in your calendar.",
     color: "text-amber-500", bg: "bg-amber-50",
   },
   {
     icon: Brain, title: "Churn Prediction",
-    desc: "AI identifies customers at risk of churning so you can bring them back — retention up to 40%.",
+    desc: "AI flags customers at risk of churning so you can reach out before they leave.",
     color: "text-violet-500", bg: "bg-violet-50",
   },
   {

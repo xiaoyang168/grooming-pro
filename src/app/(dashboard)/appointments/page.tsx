@@ -492,6 +492,12 @@ export default function AppointmentsPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge variant={status.variant}>{status.label}</Badge>
+                      {apt.payment_status === "paid" && (
+                        <Badge variant="success" className="text-xs">Paid</Badge>
+                      )}
+                      {apt.payment_status === "pending" && (
+                        <Badge variant="warning" className="text-xs">Payment Pending</Badge>
+                      )}
                       <div className="relative">
                         <Button
                           variant="ghost"

@@ -138,6 +138,7 @@ export interface Appointment {
   reminder_sent_at: string | null
   photo_before_url: string | null
   photo_after_url: string | null
+  payment_status: string | null
 }
 
 // ── Appointment (with joins) ──────────────────────────────────
