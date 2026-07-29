@@ -207,10 +207,12 @@ export default function AppointmentsPage() {
       if (!res.ok) throw new Error(json.error || "Upload failed")
 
       // 局部更新 — 只改那一个 appointment 的 photo URL，不刷新整个列表
+      // 通过我们自己的 /api/photo-proxy 代理（绕开 Supabase CORS 问题）
       // 加时间戳参数强制浏览器重新请求（避免缓存显示旧图片）
       const url = json.data?.url
       if (url) {
-        const cacheBustUrl = `${url}?t=${Date.now()}`
+        const proxyUrl = `/api/photo-proxy?url=${encodeURIComponent(url)}`
+        const cacheBustUrl = `${proxyUrl}&t=${Date.now()}`
         setAppointments(prev => prev.map(a =>
           a.id === apptId
             ? { ...a, [`photo_${photoType}_url`]: cacheBustUrl }
