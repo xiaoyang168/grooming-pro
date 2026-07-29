@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createServiceClient } from "@/lib/supabase/server"
 
 /**
  * Photo proxy — serve appointment photos through our own domain.
  *
- * Why: Supabase Storage's public URL sometimes has restrictive CORS
- * (no Access-Control-Allow-Origin), which can fail when the browser
- * tries to reload a cached/URL-changed photo. Routing images through
- * our API avoids cross-origin issues entirely.
+ * Why: Supabase Storage's public URL sometimes returns responses without
+ * CORS headers (Access-Control-Allow-Origin). The browser blocks reloading
+ * cross-origin images when CORS isn't allowed. By proxying through our
+ * own API, the browser sees only same-origin requests and the issue
+ * disappears entirely.
+ *
+ * Server-side fetch() bypasses CORS (CORS only applies in browsers),
+ * so this reliably returns image bytes for any publicly reachable URL.
  *
  * GET /api/photo-proxy?url=<encoded supabase url>
  */
@@ -17,41 +20,39 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Missing url" }, { status: 400 })
   }
 
-  // Only proxy our Supabase storage URLs for security
-  if (!url.includes("supabase.co/storage/")) {
-    return NextResponse.json({ error: "Only Supabase storage URLs are allowed" }, { status: 403 })
+  // Only proxy our Supabase storage URLs — security: avoid arbitrary open proxy
+  if (!/^https?:\/\/[^/]+\.supabase\.co\/storage\//.test(url)) {
+    return NextResponse.json(
+      { error: "Only Supabase storage URLs are allowed" },
+      { status: 403 }
+    )
   }
 
   try {
-    const supabase = await createServiceClient()
-    // Use service role to fetch any file from any bucket — bypasses RLS
-    // Parse the storage path from the public URL:
-    // https://{project}.supabase.co/storage/v1/object/public/{bucket}/{path}
-    const urlObj = new URL(url)
-    const match = urlObj.pathname.match(/\/storage\/v1\/object\/(?:public|sign|authenticated)\/(.+?)\/(.+)$/)
-    if (!match) {
-      return NextResponse.json({ error: "Invalid storage URL" }, { status: 400 })
-    }
-    const bucket = match[1]
-    const path = match[2]
-
-    const { data, error } = await supabase.storage.from(bucket).download(path)
-    if (error || !data) {
-      return NextResponse.json({ error: error?.message || "Download failed" }, { status: 500 })
+    // Server-side fetch — CORS doesn't apply on the server
+    const upstream = await fetch(url, { cache: "no-store" })
+    if (!upstream.ok) {
+      return NextResponse.json(
+        { error: `Upstream returned ${upstream.status}` },
+        { status: 502 }
+      )
     }
 
-    const arrayBuffer = await data.arrayBuffer()
-    const body = new Uint8Array(arrayBuffer)
+    const contentType = upstream.headers.get("content-type") || "image/jpeg"
+    const buffer = await upstream.arrayBuffer()
 
-    // Forward the content-type from the original (image/jpeg, image/png, etc.)
-    const contentType = data.type || "image/jpeg"
-    return new NextResponse(body, {
+    return new NextResponse(buffer, {
       headers: {
         "Content-Type": contentType,
+        // Public caching by URL — the cache-bust timestamp param forces fresh fetch on replace
         "Cache-Control": "public, max-age=31536000, immutable",
+        "Access-Control-Allow-Origin": "*",
       },
     })
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Proxy failed" }, { status: 500 })
+    return NextResponse.json(
+      { error: err.message || "Proxy failed" },
+      { status: 500 }
+    )
   }
 }
