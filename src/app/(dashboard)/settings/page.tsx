@@ -37,6 +37,7 @@ interface ShopData {
   business_hours?: Record<string, { open: string; close: string } | null>
   subscription_tier?: string
   subscription_status?: string
+  trial_ends_at?: string | null
 }
 
 export default function SettingsPage() {
@@ -737,12 +738,13 @@ export default function SettingsPage() {
                    "Free Trial"}
                 </p>
                 <Badge
-                  variant={shop?.subscription_status === "active" ? "success" : "secondary"}
+                  variant={shop?.subscription_status === "active" ? "success" : shop?.subscription_status === "canceled" ? "destructive" : "secondary"}
                   className="text-xs"
                 >
                   {shop?.subscription_status === "active" ? "Active" :
                    shop?.subscription_status === "canceled" ? "Canceled" :
-                   "14 days left"}
+                   shop?.trial_ends_at ? `${Math.max(0, Math.ceil((new Date(shop.trial_ends_at).getTime() - Date.now()) / 86400000))} days left` :
+                   "Free trial"}
                 </Badge>
               </div>
               <p className="text-sm text-muted-foreground mt-1">
