@@ -11,7 +11,7 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select"
-import { Plus, Users, Loader2, Pencil, Trash2, Phone, Mail } from "lucide-react"
+import { Plus, Users, Loader2, Pencil, Trash2, Phone, Mail, Sparkles } from "lucide-react"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 
 interface StaffMember {
@@ -48,6 +48,10 @@ export default function StaffPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
 
+  // Upgrade prompt (when free user hits staff limit)
+  const [upgradeOpen, setUpgradeOpen] = useState(false)
+  const [upgradeMessage, setUpgradeMessage] = useState("")
+
   async function fetchStaff() {
     try {
       const res = await fetch("/api/staff")
@@ -69,11 +73,22 @@ export default function StaffPage() {
           phone: form.phone || null, email: form.email || null,
         }),
       })
-      if (!res.ok) throw new Error("Failed to add staff")
+      const json = await res.json()
+      if (!res.ok) {
+        if (res.status === 403 && json.upgradeRequired) {
+          setUpgradeMessage(json.message)
+          setUpgradeOpen(true)
+          setDialogOpen(false)
+          throw new Error("__upgrade__")
+        }
+        throw new Error(json.error || "Failed to add staff")
+      }
       setForm(emptyForm)
       await fetchStaff()
       setDialogOpen(false)
-    } catch { /* ignore */ } finally { setSubmitting(false) }
+    } catch (err: unknown) {
+      if (err instanceof Error && err.message === "__upgrade__") return
+    } finally { setSubmitting(false) }
   }
 
   function openEdit(s: StaffMember) {
@@ -238,6 +253,32 @@ export default function StaffPage() {
         loading={deleting}
         onConfirm={confirmDelete}
       />
+
+      {/* Upgrade prompt — shown when free user hits 2-staff limit */}
+      <Dialog open={upgradeOpen} onOpenChange={setUpgradeOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Staff Limit Reached</DialogTitle>
+            <DialogDescription>{upgradeMessage}</DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 mt-4">
+            <div className="rounded-xl bg-gradient-to-br from-primary/10 to-pink-500/10 p-4 text-center">
+              <p className="text-2xl font-bold">$29<span className="text-sm font-normal text-muted-foreground">/month</span></p>
+              <p className="text-sm font-semibold mt-1">Professional Plan</p>
+              <ul className="text-xs text-muted-foreground mt-2 space-y-1 text-left">
+                <li>✓ Unlimited staff members</li>
+                <li>✓ AI smart scheduling &amp; churn alerts</li>
+                <li>✓ SMS + email notifications</li>
+                <li>✓ Inventory &amp; loyalty packages</li>
+              </ul>
+            </div>
+            <Button variant="gradient" onClick={() => { setUpgradeOpen(false); window.location.href = "/settings" }}>
+              <Sparkles className="h-4 w-4 mr-2" />Upgrade to Pro
+            </Button>
+            <Button variant="ghost" onClick={() => setUpgradeOpen(false)}>Maybe later</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

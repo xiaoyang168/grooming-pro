@@ -5,6 +5,10 @@
       "schedule": "0 14 * * *"
     },
     {
+      "path": "/api/cron/marketing-emails",
+      "schedule": "0 9 * * *"
+    },
+    {
       "path": "/api/cron/content-generator?type=blog",
       "schedule": "0 13 * * *"
     },

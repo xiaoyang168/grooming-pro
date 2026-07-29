@@ -39,6 +39,7 @@ const emptyForm = {
   age_years: "",
   weight_kg: "",
   color: "",
+  birthday: "",
 }
 
 export default function PetsPage() {
@@ -112,6 +113,7 @@ export default function PetsPage() {
       age_years: pet.age_years != null ? String(pet.age_years) : "",
       weight_kg: pet.weight_kg != null ? String(pet.weight_kg) : "",
       color: pet.color || "",
+      birthday: pet.birthday || "",
     })
     setFeedback(null)
     setEditDialogOpen(true)
@@ -154,6 +156,7 @@ export default function PetsPage() {
         age_years: form.age_years ? parseFloat(form.age_years) : null,
         weight_kg: form.weight_kg ? parseFloat(form.weight_kg) : null,
         color: form.color || null,
+        birthday: form.birthday || null,
       }
       // Only include customer_id when present (avoid sending empty string for PATCH)
       if (form.customer_id) payload.customer_id = form.customer_id
@@ -368,6 +371,18 @@ export default function PetsPage() {
             placeholder="25"
             className="mt-1.5"
           />
+        </div>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label className="text-sm font-semibold">Birthday</label>
+          <div className="mt-1.5">
+            <DatePicker
+              value={form.birthday}
+              onChange={(v) => setForm({ ...form, birthday: v })}
+              placeholder="Pick birthday"
+            />
+          </div>
         </div>
       </div>
       {feedback && (

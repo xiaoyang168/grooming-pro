@@ -81,6 +81,7 @@ export interface Pet {
   medical_notes: string
   behavior_notes: string
   photo_url: string | null
+  birthday: string | null
   created_at: string
 }
 

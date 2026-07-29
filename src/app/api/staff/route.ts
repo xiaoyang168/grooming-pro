@@ -41,6 +41,42 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
     const supabase = await createClient()
+
+    // ── Staff limit enforcement ─────────────────────────────────
+    // Free / trialing shops can have at most 2 active staff.
+    // Pro / Business shops are unlimited.
+    const { data: shop } = await supabase
+      .from("shops")
+      .select("subscription_tier, subscription_status")
+      .eq("id", shopId)
+      .single()
+
+    const tier = shop?.subscription_tier || "free"
+    const status = shop?.subscription_status || "trialing"
+    const isPaid = (tier === "pro" || tier === "business") && status === "active"
+
+    if (!isPaid) {
+      const { count } = await supabase
+        .from("staff")
+        .select("id", { count: "exact", head: true })
+        .eq("shop_id", shopId)
+        .eq("is_active", true)
+
+      if ((count || 0) >= 2) {
+        return NextResponse.json(
+          {
+            error: "Staff limit reached",
+            message: "Your Starter plan supports up to 2 staff members. Upgrade to Pro for unlimited staff.",
+            limit: 2,
+            current: count,
+            upgradeRequired: true,
+          },
+          { status: 403 }
+        )
+      }
+    }
+    // ── End staff limit enforcement ─────────────────────────────
+
     const { data, error } = await supabase
       .from("staff")
       .insert({
