@@ -55,14 +55,13 @@ export default function LoginPage() {
 
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/api/auth/callback`,
-          },
+        const response = await fetch("/api/auth/signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
         })
-        if (error) throw error
+        const result = await response.json().catch(() => ({}))
+        if (!response.ok) throw new Error(result.error || "Unable to create account")
         if (rememberMe) localStorage.setItem(REMEMBERED_EMAIL_KEY, email)
         setSuccessMsg("Check your email for the confirmation link!")
         return
