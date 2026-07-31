@@ -5,6 +5,7 @@ import { createServiceClient } from "@/lib/supabase/server"
 
 const DEVICE_COOKIE = "grooming_device_id"
 const TRIAL_DAYS = 14
+const MAX_TRIALS_PER_IP = 3
 
 function sha256(value: string) {
   return createHash("sha256").update(value).digest("hex")
@@ -33,6 +34,26 @@ export async function POST(request: Request) {
     }
 
     const admin = createServiceClient()
+
+    // Check if email already exists in auth.users using service role
+    const { data: existingUser } = await admin
+      .schema("auth")
+      .from("users")
+      .select("id")
+      .eq("email", email)
+      .maybeSingle()
+
+    if (existingUser) {
+      return withDeviceCookie(
+        NextResponse.json(
+          { error: "An account with this email already exists. Please sign in instead." },
+          { status: 409 }
+        ),
+        deviceId,
+        isNewDevice
+      )
+    }
+
     const { data: existingClaim } = await admin
       .from("trial_claims")
       .select("id")
@@ -50,6 +71,27 @@ export async function POST(request: Request) {
       )
     }
 
+    // IP-based trial limit: same network can only have N free trials
+    const ipHash = sha256(getClientIp(request))
+    const { count: ipTrialCount, error: ipCountError } = await admin
+      .from("trial_claims")
+      .select("id", { count: "exact", head: true })
+      .eq("ip_hash", ipHash)
+
+    if (ipCountError) {
+      console.error("IP trial count error:", ipCountError)
+    }
+    if ((ipTrialCount ?? 0) >= MAX_TRIALS_PER_IP) {
+      return withDeviceCookie(
+        NextResponse.json(
+          { error: `This network has already used ${MAX_TRIALS_PER_IP} free trials. Please sign in or upgrade to a paid plan.` },
+          { status: 429 }
+        ),
+        deviceId,
+        isNewDevice
+      )
+    }
+
     // Reserve the device before creating the auth user. The unique index closes
     // the race where two signup requests arrive from the same browser together.
     const { data: claim, error: claimError } = await admin
@@ -57,7 +99,7 @@ export async function POST(request: Request) {
       .insert({
         device_hash: sha256(deviceId),
         email_normalized: email,
-        ip_hash: sha256(getClientIp(request)),
+        ip_hash: ipHash,
       })
       .select("id")
       .single()

@@ -10,7 +10,7 @@ export interface AuthShop {
   trialValid: boolean
 }
 
-export async function requireProTier(): Promise<AuthShop> {
+export async function requireAuth(): Promise<AuthShop> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new AuthError("Unauthorized", 401)
@@ -26,14 +26,33 @@ export async function requireProTier(): Promise<AuthShop> {
   const tier = shop.subscription_tier || "free"
   const trialEnded = shop.trial_ends_at ? new Date(shop.trial_ends_at) < new Date() : false
 
-  if (tier === "free" && trialEnded) {
+  return { shopId: shop.id, tier, trialValid: !trialEnded }
+}
+
+export async function requireProTier(): Promise<AuthShop> {
+  const authShop = await requireAuth()
+
+  if (authShop.tier === "free" && !authShop.trialValid) {
     throw new AuthError(
       "Your 14-day free trial has ended. Upgrade to Pro to continue using AI features.",
       402
     )
   }
 
-  return { shopId: shop.id, tier, trialValid: !trialEnded }
+  return authShop
+}
+
+export async function requireActiveSubscription(): Promise<AuthShop> {
+  const authShop = await requireAuth()
+
+  if (authShop.tier === "free" && !authShop.trialValid) {
+    throw new AuthError(
+      "Your 14-day free trial has ended. Please upgrade to continue.",
+      402
+    )
+  }
+
+  return authShop
 }
 
 export class AuthError extends Error {
